@@ -18,7 +18,7 @@ export const getAiStatus = asyncHandler(async (req, res) => {
     res,
     {
       configured: isConfigured,
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       mode: isConfigured ? 'live' : 'fallback_simulation',
       capabilities: [
         'clinical_triage',

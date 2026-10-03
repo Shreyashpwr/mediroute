@@ -74,7 +74,7 @@ async function runGeminiAiQA() {
     statusRes.status === 200 &&
     statusRes.data?.success === true &&
     typeof statusRes.data?.data?.configured === 'boolean' &&
-    statusRes.data?.data?.model === 'gemini-1.5-flash' &&
+    statusRes.data?.data?.model === 'gemini-2.5-flash' &&
     !JSON.stringify(statusRes.data).includes('AIza');
 
   record(

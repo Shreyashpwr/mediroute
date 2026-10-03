@@ -11,7 +11,7 @@ import logger from '../utils/logger.js';
 import AppError from '../utils/appError.js';
 
 const GEMINI_API_ENDPOINT =
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
 const AI_RECOMMENDATION_LABEL = 'AI-Assisted Recommendation';
 const AI_DECISION_SUPPORT_DISCLAIMER =
