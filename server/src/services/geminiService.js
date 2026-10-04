@@ -10,8 +10,9 @@ import {
 import logger from '../utils/logger.js';
 import AppError from '../utils/appError.js';
 
-const GEMINI_API_ENDPOINT =
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+export const GEMINI_MODEL = 'gemini-3.8-flash';
+export const GEMINI_API_ENDPOINT =
+  `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 const AI_RECOMMENDATION_LABEL = 'AI-Assisted Recommendation';
 const AI_DECISION_SUPPORT_DISCLAIMER =
@@ -60,12 +61,17 @@ export const cleanAndParseJsonResponse = (rawText) => {
  * Execute raw Gemini REST API call with retry for rate limits (429) and timeout.
  */
 export const callGeminiApi = async (systemInstruction, userPrompt, retryCount = 0) => {
-  const apiKey = config.geminiApiKey;
-  if (!apiKey) {
+  const hasApiKey = Boolean(config.geminiApiKey);
+
+  // Safe diagnostic logging (NEVER print the API key)
+  logger.info(`[Gemini Diagnostics] Initiating call - Model: "${GEMINI_MODEL}", GEMINI_API_KEY exists: ${hasApiKey}`);
+
+  if (!hasApiKey) {
     logger.warn('GEMINI_API_KEY is not configured in backend environment; executing fallback simulation.');
     return null; // Triggers deterministic fallback
   }
 
+  const apiKey = config.geminiApiKey;
   const url = `${GEMINI_API_ENDPOINT}?key=${apiKey}`;
   const payload = {
     contents: [
@@ -99,11 +105,14 @@ export const callGeminiApi = async (systemInstruction, userPrompt, retryCount = 
 
     clearTimeout(timeoutId);
 
+    // Safe diagnostic logging of HTTP status
+    logger.info(`[Gemini Diagnostics] Model: "${GEMINI_MODEL}", HTTP Status: ${res.status}`);
+
     // Rate Limit Handling (HTTP 429)
     if (res.status === 429) {
       if (retryCount < 2) {
         const delay = (retryCount + 1) * 1000;
-        logger.warn(`Gemini API rate limit hit (429). Retrying in ${delay}ms... (attempt ${retryCount + 1}/2)`);
+        logger.warn(`[Gemini Diagnostics] Rate limit hit (429). Retrying in ${delay}ms... (attempt ${retryCount + 1}/2)`);
         await new Promise((r) => setTimeout(r, delay));
         return callGeminiApi(systemInstruction, userPrompt, retryCount + 1);
       }
@@ -113,7 +122,8 @@ export const callGeminiApi = async (systemInstruction, userPrompt, retryCount = 
     if (!res.ok) {
       const errorBody = await res.json().catch(() => ({}));
       const message = errorBody?.error?.message || `Gemini API error with status ${res.status}`;
-      logger.error('Gemini API call failed:', { status: res.status, message });
+      // Safe diagnostic logging (status and error message only, never API key)
+      logger.error(`[Gemini Diagnostics] Model: "${GEMINI_MODEL}", HTTP Status: ${res.status}, Error Message: ${message}`);
       throw new AppError(`AI Service Unavailable: ${message}`, res.status >= 500 ? 502 : res.status);
     }
 
@@ -127,6 +137,7 @@ export const callGeminiApi = async (systemInstruction, userPrompt, retryCount = 
   } catch (err) {
     clearTimeout(timeoutId);
     if (err.name === 'AbortError') {
+      logger.error(`[Gemini Diagnostics] Model: "${GEMINI_MODEL}", Gemini AI request timed out after 12 seconds.`);
       throw new AppError('Gemini AI request timed out after 12 seconds.', 504);
     }
     throw err;
