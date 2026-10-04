@@ -108,23 +108,36 @@ export const callGeminiApi = async (systemInstruction, userPrompt, retryCount = 
     // Safe diagnostic logging of HTTP status
     logger.info(`[Gemini Diagnostics] Model: "${GEMINI_MODEL}", HTTP Status: ${res.status}`);
 
-    // Rate Limit Handling (HTTP 429)
-    if (res.status === 429) {
-      if (retryCount < 2) {
-        const delay = (retryCount + 1) * 1000;
-        logger.warn(`[Gemini Diagnostics] Rate limit hit (429). Retrying in ${delay}ms... (attempt ${retryCount + 1}/2)`);
-        await new Promise((r) => setTimeout(r, delay));
-        return callGeminiApi(systemInstruction, userPrompt, retryCount + 1);
-      }
-      throw new AppError('Gemini AI service rate limit reached. Please try again shortly.', 429);
-    }
-
     if (!res.ok) {
       const errorBody = await res.json().catch(() => ({}));
       const message = errorBody?.error?.message || `Gemini API error with status ${res.status}`;
-      // Safe diagnostic logging (status and error message only, never API key)
-      logger.error(`[Gemini Diagnostics] Model: "${GEMINI_MODEL}", HTTP Status: ${res.status}, Error Message: ${message}`);
-      throw new AppError(`AI Service Unavailable: ${message}`, res.status >= 500 ? 502 : res.status);
+
+      // Distinguish permanent client errors (invalid key, bad request, forbidden) from transient service errors
+      const isPermanentClientError = [400, 401, 403, 404].includes(res.status);
+      const isTransient =
+        !isPermanentClientError &&
+        (res.status === 429 ||
+          res.status === 500 ||
+          res.status === 502 ||
+          res.status === 503 ||
+          /high demand|unavailable|overloaded|resource exhausted|rate limit|quota|temporarily/i.test(message));
+
+      if (isTransient && retryCount < 2) {
+        const delay = (retryCount + 1) * 1000; // retry 1: ~1000ms, retry 2: ~2000ms
+        logger.warn(
+          `[Gemini Diagnostics] Transient Gemini error (HTTP ${res.status}: ${message}). Retrying in ${delay}ms... (attempt ${retryCount + 1}/2)`
+        );
+        await new Promise((r) => setTimeout(r, delay));
+        return callGeminiApi(systemInstruction, userPrompt, retryCount + 1);
+      }
+
+      // Safe diagnostic logging (status and error message only, NEVER API key or full URL)
+      logger.error(
+        `[Gemini Diagnostics] Final failure - Model: "${GEMINI_MODEL}", HTTP Status: ${res.status}, Error Message: ${message}`
+      );
+      const err = new AppError(`AI Service Unavailable: ${message}`, res.status >= 500 ? 503 : res.status);
+      err.isTransient = isTransient;
+      throw err;
     }
 
     const data = await res.json();
@@ -136,9 +149,20 @@ export const callGeminiApi = async (systemInstruction, userPrompt, retryCount = 
     return cleanAndParseJsonResponse(candidateText);
   } catch (err) {
     clearTimeout(timeoutId);
+    if ((err.name === 'AbortError' || err.code === 'ECONNRESET' || /fetch failed/i.test(err.message)) && retryCount < 2) {
+      const delay = (retryCount + 1) * 1000;
+      logger.warn(
+        `[Gemini Diagnostics] Network/Timeout error (${err.message}). Retrying in ${delay}ms... (attempt ${retryCount + 1}/2)`
+      );
+      await new Promise((r) => setTimeout(r, delay));
+      return callGeminiApi(systemInstruction, userPrompt, retryCount + 1);
+    }
+
     if (err.name === 'AbortError') {
-      logger.error(`[Gemini Diagnostics] Model: "${GEMINI_MODEL}", Gemini AI request timed out after 12 seconds.`);
-      throw new AppError('Gemini AI request timed out after 12 seconds.', 504);
+      logger.error(`[Gemini Diagnostics] Model: "${GEMINI_MODEL}", Gemini AI request timed out after retries.`);
+      const timeoutErr = new AppError('Gemini AI request timed out.', 504);
+      timeoutErr.isTransient = true;
+      throw timeoutErr;
     }
     throw err;
   }
@@ -390,6 +414,34 @@ export const optimizeRoute = async ({
       source: 'gemini',
     };
   } catch (err) {
+    const isTransient =
+      err.isTransient ||
+      err.statusCode === 429 ||
+      err.statusCode === 500 ||
+      err.statusCode === 502 ||
+      err.statusCode === 503 ||
+      err.statusCode === 504 ||
+      /high demand|unavailable|overloaded|resource exhausted|rate limit|quota|temporarily|timeout/i.test(err.message);
+
+    if (isTransient) {
+      logger.warn(
+        `[Gemini Diagnostics] Route optimization Gemini API unavailable (${err.message}). Falling back to standard route calculation.`
+      );
+      const isPriority = triageLevel === 'critical' || triageLevel === 'urgent';
+      return {
+        recommendationLabel: AI_RECOMMENDATION_LABEL,
+        disclaimer: AI_DECISION_SUPPORT_DISCLAIMER,
+        requiresHumanConfirmation: true,
+        recommendedRouteName: isPriority ? 'Emergency Arterial Priority Corridor (Standard Route)' : 'Standard Highway Transit Route',
+        reasoning: 'AI route optimization is temporarily unavailable. The standard route remains available.',
+        avoidedHazards: ['Traffic monitoring active on primary thoroughfare'],
+        estimatedTimeSavedMinutes: isPriority ? 5 : 0,
+        priorityLaneEligible: isPriority,
+        source: 'standard_route_fallback',
+        isAiUnavailable: true,
+      };
+    }
+
     if (err instanceof AppError) throw err;
     logger.error('Error during route optimization:', err.message);
     throw new AppError(`Route optimization failed: ${err.message}`, 500);
