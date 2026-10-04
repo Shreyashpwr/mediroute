@@ -4,10 +4,16 @@ import path from 'path';
 const API_BASE = 'http://localhost:5000/api';
 const CLIENT_BASE = 'http://localhost:5173';
 
+let authToken = '';
+
 async function request(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
+  const headers = { 'Content-Type': 'application/json', ...options.headers };
+  if (authToken && !headers.Authorization) {
+    headers.Authorization = `Bearer ${authToken}`;
+  }
   const res = await fetch(url, {
-    headers: { 'Content-Type': 'application/json', ...options.headers },
+    headers,
     ...options,
   });
   const data = await res.json().catch(() => null);
@@ -18,6 +24,18 @@ async function runFocusedFacilitiesQA() {
   console.log('======================================================================');
   console.log('       FOCUSED QA VERIFICATION: /facilities (13 CRITERIA)');
   console.log('======================================================================\n');
+
+  // Authenticate first
+  const loginRes = await request('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({
+      email: 'admin@mediroute.io',
+      password: process.env.ADMIN_PASSWORD || 'Admin@123456',
+    }),
+  });
+  if (loginRes.ok && loginRes.data?.data?.token) {
+    authToken = loginRes.data.data.token;
+  }
 
   const results = [];
   function record(criterionNum, title, pass, details = '') {
@@ -136,10 +154,10 @@ async function runFocusedFacilitiesQA() {
   );
 
   // 8. Loading state works
-  const pageCode = fs.readFileSync(
-    path.resolve(process.cwd(), 'client/src/pages/FacilitiesPage.jsx'),
-    'utf-8'
-  );
+  const clientFile = fs.existsSync(path.resolve(process.cwd(), 'client/src/pages/FacilitiesPage.jsx'))
+    ? path.resolve(process.cwd(), 'client/src/pages/FacilitiesPage.jsx')
+    : path.resolve(process.cwd(), '../client/src/pages/FacilitiesPage.jsx');
+  const pageCode = fs.readFileSync(clientFile, 'utf-8');
   const hasLoading =
     pageCode.includes('import LoadingSpinner from') &&
     pageCode.includes('<LoadingSpinner message="Fetching medical facilities registry from MongoDB..."');
@@ -175,10 +193,10 @@ async function runFocusedFacilitiesQA() {
   );
 
   // 11. Responsive layout works
-  const cssCode = fs.readFileSync(
-    path.resolve(process.cwd(), 'client/src/index.css'),
-    'utf-8'
-  );
+  const cssFile = fs.existsSync(path.resolve(process.cwd(), 'client/src/index.css'))
+    ? path.resolve(process.cwd(), 'client/src/index.css')
+    : path.resolve(process.cwd(), '../client/src/index.css');
+  const cssCode = fs.readFileSync(cssFile, 'utf-8');
   const hasResponsive =
     cssCode.includes('.facilities-grid') &&
     cssCode.includes('@media (max-width: 640px)') &&

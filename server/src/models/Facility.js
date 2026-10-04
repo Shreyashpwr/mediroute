@@ -28,6 +28,15 @@ const pointSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const departmentBedSchema = new mongoose.Schema(
+  {
+    total: { type: Number, default: 0, min: 0 },
+    available: { type: Number, default: 0, min: 0 },
+    occupied: { type: Number, default: 0, min: 0 },
+  },
+  { _id: false }
+);
+
 const emergencyCapacitySchema = new mongoose.Schema(
   {
     totalBeds: { type: Number, default: 0, min: 0 },
@@ -37,6 +46,14 @@ const emergencyCapacitySchema = new mongoose.Schema(
       type: String,
       enum: ['normal', 'busy', 'critical', 'divert'],
       default: 'normal',
+    },
+    departments: {
+      emergency: { type: departmentBedSchema, default: () => ({}) },
+      icu: { type: departmentBedSchema, default: () => ({}) },
+      cardiac: { type: departmentBedSchema, default: () => ({}) },
+      trauma: { type: departmentBedSchema, default: () => ({}) },
+      pediatric: { type: departmentBedSchema, default: () => ({}) },
+      general: { type: departmentBedSchema, default: () => ({}) },
     },
   },
   { _id: false }

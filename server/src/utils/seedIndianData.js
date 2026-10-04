@@ -7,24 +7,34 @@ import RouteLog from '../models/RouteLog.js';
 import logger from './logger.js';
 
 export const seedIndianData = async () => {
-  logger.info('Starting MediRoute synthetic Indian demo data seeding...');
-
-  // Clear existing collections safely
-  await Promise.all([
-    User.deleteMany({}),
-    Facility.deleteMany({}),
-    Ambulance.deleteMany({}),
-    Dispatch.deleteMany({}),
-    RouteLog.deleteMany({}),
-  ]);
-
-  logger.info('Existing demo collections cleared.');
+  logger.info('Starting MediRoute synthetic Indian demo data seeding (safe idempotent mode)...');
 
   // 1. Seed Users (Admin, Dispatchers, Medical Staff, Transport Operators, Pending & Rejected)
   const defaultPassword = 'Password@123';
   const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123456';
 
-  const admin = await User.create({
+  const upsertUser = async (userData) => {
+    let user = await User.findOne({ email: userData.email.toLowerCase() });
+    if (!user) {
+      user = await User.create(userData);
+    } else {
+      user.name = userData.name;
+      user.phone = userData.phone;
+      user.role = userData.role;
+      user.approvalStatus = userData.approvalStatus;
+      user.approvedAt = userData.approvedAt;
+      user.approvedBy = userData.approvedBy;
+      user.rejectionReason = userData.rejectionReason;
+      user.isActive = userData.isActive;
+      if (userData.password) {
+        user.password = userData.password;
+      }
+      await user.save();
+    }
+    return user;
+  };
+
+  const admin = await upsertUser({
     name: 'System Administrator',
     email: (process.env.ADMIN_EMAIL || 'admin@mediroute.io').toLowerCase(),
     password: adminPassword,
@@ -35,7 +45,7 @@ export const seedIndianData = async () => {
     isActive: true,
   });
 
-  const dispatcher1 = await User.create({
+  const dispatcher1 = await upsertUser({
     name: 'Rajesh Deshpande',
     email: 'rajesh.dispatcher@mediroute.in',
     password: defaultPassword,
@@ -47,7 +57,7 @@ export const seedIndianData = async () => {
     isActive: true,
   });
 
-  const dispatcher2 = await User.create({
+  const dispatcher2 = await upsertUser({
     name: 'Pooja Patil',
     email: 'pooja.patil@mediroute.in',
     password: defaultPassword,
@@ -59,7 +69,7 @@ export const seedIndianData = async () => {
     isActive: true,
   });
 
-  const doctor1 = await User.create({
+  const doctor1 = await upsertUser({
     name: 'Dr. Arun Joshi',
     email: 'dr.arun.joshi@mediroute.in',
     password: defaultPassword,
@@ -71,7 +81,7 @@ export const seedIndianData = async () => {
     isActive: true,
   });
 
-  const doctor2 = await User.create({
+  const doctor2 = await upsertUser({
     name: 'Dr. Kavita Sharma',
     email: 'dr.kavita.sharma@mediroute.in',
     password: defaultPassword,
@@ -83,7 +93,7 @@ export const seedIndianData = async () => {
     isActive: true,
   });
 
-  const driver1 = await User.create({
+  const driver1 = await upsertUser({
     name: 'Sachin Gaikwad',
     email: 'sachin.driver@mediroute.in',
     password: defaultPassword,
@@ -95,7 +105,7 @@ export const seedIndianData = async () => {
     isActive: true,
   });
 
-  const driver2 = await User.create({
+  const driver2 = await upsertUser({
     name: 'Manoj Shinde',
     email: 'manoj.shinde@mediroute.in',
     password: defaultPassword,
@@ -108,7 +118,7 @@ export const seedIndianData = async () => {
   });
 
   // Pending user accounts awaiting admin review
-  const pendingUser1 = await User.create({
+  await upsertUser({
     name: 'Kunal Bansal',
     email: 'kunal.applicant@mediroute.in',
     password: defaultPassword,
@@ -120,7 +130,7 @@ export const seedIndianData = async () => {
     isActive: true,
   });
 
-  const pendingUser2 = await User.create({
+  await upsertUser({
     name: 'Neha Kulkarni',
     email: 'neha.paramedic@mediroute.in',
     password: defaultPassword,
@@ -133,7 +143,7 @@ export const seedIndianData = async () => {
   });
 
   // Rejected user account
-  const rejectedUser = await User.create({
+  await upsertUser({
     name: 'Rahul More',
     email: 'rahul.rejected@mediroute.in',
     password: defaultPassword,
@@ -146,11 +156,12 @@ export const seedIndianData = async () => {
     isActive: true,
   });
 
-  logger.info('Synthetic Indian users seeded successfully.');
+  logger.info('Users verified and updated successfully.');
 
-  // 2. Seed Medical Facilities (Pune, Pimpri-Chinchwad, Mumbai, Navi Mumbai)
+  // 2. Seed Medical Facilities (All 8 facilities with realistic Indian bed availability & departments)
   const facilityData = [
     {
+      _id: '6ab961df35670da04db404f9',
       name: 'Pune Central Emergency Hospital',
       facilityType: 'trauma_center',
       address: {
@@ -163,18 +174,27 @@ export const seedIndianData = async () => {
         type: 'Point',
         coordinates: [73.8478, 18.5314],
       },
-      capabilities: ['trauma_level_1', 'icu', 'cardiac', 'neurosurgery', 'burn_unit'],
+      capabilities: ['trauma_level_1', 'icu', 'cardiac', 'neurosurgery', 'burn_unit', 'emergency'],
       emergencyCapacity: {
-        totalBeds: 180,
-        availableBeds: 34,
-        icuAvailable: 8,
+        totalBeds: 220,
+        availableBeds: 52,
+        icuAvailable: 12,
         status: 'normal',
+        departments: {
+          emergency: { total: 35, available: 10, occupied: 25 },
+          icu: { total: 25, available: 12, occupied: 13 },
+          cardiac: { total: 30, available: 8, occupied: 22 },
+          trauma: { total: 30, available: 9, occupied: 21 },
+          pediatric: { total: 20, available: 4, occupied: 16 },
+          general: { total: 80, available: 9, occupied: 71 },
+        },
       },
       contactPhone: '+91 20 2550 1100',
       isOpen24Hours: true,
       isActive: true,
     },
     {
+      _id: '6ab961df35670da04db404fa',
       name: 'Pimpri Emergency Medical Centre',
       facilityType: 'hospital',
       address: {
@@ -187,18 +207,27 @@ export const seedIndianData = async () => {
         type: 'Point',
         coordinates: [73.7997, 18.6298],
       },
-      capabilities: ['icu', 'pediatrics', 'orthopedics', 'general_surgery'],
+      capabilities: ['icu', 'pediatrics', 'orthopedics', 'general_surgery', 'emergency'],
       emergencyCapacity: {
-        totalBeds: 120,
-        availableBeds: 18,
-        icuAvailable: 4,
+        totalBeds: 150,
+        availableBeds: 32,
+        icuAvailable: 6,
         status: 'normal',
+        departments: {
+          emergency: { total: 25, available: 6, occupied: 19 },
+          icu: { total: 20, available: 6, occupied: 14 },
+          cardiac: { total: 15, available: 3, occupied: 12 },
+          trauma: { total: 20, available: 4, occupied: 16 },
+          pediatric: { total: 30, available: 8, occupied: 22 },
+          general: { total: 40, available: 5, occupied: 35 },
+        },
       },
       contactPhone: '+91 20 2765 4321',
       isOpen24Hours: true,
       isActive: true,
     },
     {
+      _id: '6ab961df35670da04db404fb',
       name: 'Sahyadri Acute Trauma Care Centre',
       facilityType: 'trauma_center',
       address: {
@@ -211,18 +240,27 @@ export const seedIndianData = async () => {
         type: 'Point',
         coordinates: [73.8402, 18.5158],
       },
-      capabilities: ['trauma_level_1', 'cardiac', 'icu', 'stroke_unit'],
+      capabilities: ['trauma_level_1', 'cardiac', 'icu', 'stroke_unit', 'emergency'],
       emergencyCapacity: {
-        totalBeds: 95,
-        availableBeds: 6,
-        icuAvailable: 1,
+        totalBeds: 110,
+        availableBeds: 8,
+        icuAvailable: 2,
         status: 'busy',
+        departments: {
+          emergency: { total: 20, available: 2, occupied: 18 },
+          icu: { total: 15, available: 2, occupied: 13 },
+          cardiac: { total: 20, available: 1, occupied: 19 },
+          trauma: { total: 25, available: 2, occupied: 23 },
+          pediatric: { total: 10, available: 0, occupied: 10 },
+          general: { total: 20, available: 1, occupied: 19 },
+        },
       },
       contactPhone: '+91 20 6721 3000',
       isOpen24Hours: true,
       isActive: true,
     },
     {
+      _id: '6ab961df35670da04db404fc',
       name: 'Kothrud Municipal Emergency Unit',
       facilityType: 'urgent_care',
       address: {
@@ -235,18 +273,27 @@ export const seedIndianData = async () => {
         type: 'Point',
         coordinates: [73.8087, 18.5074],
       },
-      capabilities: ['urgent_care', 'trauma_stabilization', 'radiology'],
+      capabilities: ['urgent_care', 'trauma_stabilization', 'radiology', 'emergency'],
       emergencyCapacity: {
-        totalBeds: 50,
-        availableBeds: 15,
-        icuAvailable: 2,
+        totalBeds: 60,
+        availableBeds: 19,
+        icuAvailable: 3,
         status: 'normal',
+        departments: {
+          emergency: { total: 18, available: 7, occupied: 11 },
+          icu: { total: 8, available: 3, occupied: 5 },
+          cardiac: { total: 6, available: 2, occupied: 4 },
+          trauma: { total: 10, available: 3, occupied: 7 },
+          pediatric: { total: 8, available: 2, occupied: 6 },
+          general: { total: 10, available: 2, occupied: 8 },
+        },
       },
       contactPhone: '+91 20 2544 8900',
       isOpen24Hours: true,
       isActive: true,
     },
     {
+      _id: '6ab961df35670da04db404fd',
       name: 'Hinjawadi LifeLine Medical Centre',
       facilityType: 'hospital',
       address: {
@@ -259,18 +306,27 @@ export const seedIndianData = async () => {
         type: 'Point',
         coordinates: [73.7380, 18.5913],
       },
-      capabilities: ['icu', 'industrial_trauma', 'burn_unit'],
+      capabilities: ['icu', 'industrial_trauma', 'burn_unit', 'emergency'],
       emergencyCapacity: {
-        totalBeds: 80,
-        availableBeds: 2,
+        totalBeds: 85,
+        availableBeds: 3,
         icuAvailable: 0,
         status: 'divert',
+        departments: {
+          emergency: { total: 15, available: 1, occupied: 14 },
+          icu: { total: 12, available: 0, occupied: 12 },
+          cardiac: { total: 10, available: 0, occupied: 10 },
+          trauma: { total: 18, available: 1, occupied: 17 },
+          pediatric: { total: 10, available: 0, occupied: 10 },
+          general: { total: 20, available: 1, occupied: 19 },
+        },
       },
       contactPhone: '+91 20 6688 9900',
       isOpen24Hours: true,
       isActive: true,
     },
     {
+      _id: '6ab961df35670da04db404fe',
       name: 'Mumbai City Trauma & Acute Care Centre',
       facilityType: 'trauma_center',
       address: {
@@ -283,18 +339,27 @@ export const seedIndianData = async () => {
         type: 'Point',
         coordinates: [72.8258, 18.9986],
       },
-      capabilities: ['trauma_level_1', 'cardiac', 'neurosurgery', 'icu'],
+      capabilities: ['trauma_level_1', 'cardiac', 'neurosurgery', 'icu', 'pediatrics', 'emergency'],
       emergencyCapacity: {
-        totalBeds: 240,
-        availableBeds: 28,
-        icuAvailable: 6,
+        totalBeds: 280,
+        availableBeds: 64,
+        icuAvailable: 14,
         status: 'normal',
+        departments: {
+          emergency: { total: 45, available: 14, occupied: 31 },
+          icu: { total: 35, available: 14, occupied: 21 },
+          cardiac: { total: 40, available: 11, occupied: 29 },
+          trauma: { total: 45, available: 12, occupied: 33 },
+          pediatric: { total: 25, available: 5, occupied: 20 },
+          general: { total: 90, available: 8, occupied: 82 },
+        },
       },
       contactPhone: '+91 22 2490 8000',
       isOpen24Hours: true,
       isActive: true,
     },
     {
+      _id: '6ab961df35670da04db404ff',
       name: 'Navi Mumbai Regional Emergency Hospital',
       facilityType: 'hospital',
       address: {
@@ -307,21 +372,82 @@ export const seedIndianData = async () => {
         type: 'Point',
         coordinates: [72.9982, 19.0664],
       },
-      capabilities: ['icu', 'pediatrics', 'orthopedics'],
+      capabilities: ['icu', 'pediatrics', 'orthopedics', 'cardiac', 'emergency'],
       emergencyCapacity: {
-        totalBeds: 140,
-        availableBeds: 21,
-        icuAvailable: 5,
+        totalBeds: 160,
+        availableBeds: 36,
+        icuAvailable: 7,
         status: 'normal',
+        departments: {
+          emergency: { total: 25, available: 8, occupied: 17 },
+          icu: { total: 20, available: 7, occupied: 13 },
+          cardiac: { total: 20, available: 5, occupied: 15 },
+          trauma: { total: 20, available: 4, occupied: 16 },
+          pediatric: { total: 25, available: 6, occupied: 19 },
+          general: { total: 50, available: 6, occupied: 44 },
+        },
       },
       contactPhone: '+91 22 2789 5500',
       isOpen24Hours: true,
       isActive: true,
     },
+    {
+      _id: '6ac14e1c8b08dd1fbe39c001',
+      name: 'Metro Central General Hospital',
+      facilityType: 'hospital',
+      address: {
+        street: '100 Medical Parkway',
+        city: 'Metro City',
+        state: 'NY',
+        zipCode: '10001',
+      },
+      location: {
+        type: 'Point',
+        coordinates: [-73.9851, 40.7484],
+      },
+      capabilities: ['icu', 'trauma_center', 'stroke_unit', 'cardiac', 'pediatrics', 'emergency'],
+      emergencyCapacity: {
+        totalBeds: 250,
+        availableBeds: 22,
+        icuAvailable: 4,
+        status: 'busy',
+        departments: {
+          emergency: { total: 35, available: 4, occupied: 31 },
+          icu: { total: 25, available: 4, occupied: 21 },
+          cardiac: { total: 30, available: 3, occupied: 27 },
+          trauma: { total: 30, available: 3, occupied: 27 },
+          pediatric: { total: 20, available: 2, occupied: 18 },
+          general: { total: 110, available: 6, occupied: 104 },
+        },
+      },
+      contactPhone: '+1-555-0100',
+      isOpen24Hours: true,
+      isActive: true,
+    },
   ];
 
-  const facilities = await Facility.create(facilityData);
-  logger.info(`Seeded ${facilities.length} Indian healthcare facilities.`);
+  const seededFacilities = [];
+  const facilityMap = {};
+
+  for (const fac of facilityData) {
+    const filter = fac._id
+      ? { $or: [{ _id: fac._id }, { name: fac.name }] }
+      : { name: fac.name };
+    const { _id, ...fieldsToSet } = fac;
+    const update = { $set: fieldsToSet };
+    if (_id) {
+      update.$setOnInsert = { _id };
+    }
+    const doc = await Facility.findOneAndUpdate(filter, update, {
+      upsert: true,
+      new: true,
+      setDefaultsOnInsert: true,
+    });
+    seededFacilities.push(doc);
+    facilityMap[doc.name] = doc._id;
+  }
+
+  logger.info(`Idempotently synchronized ${seededFacilities.length} healthcare facilities.`);
 
   // 3. Seed Ambulances
   const ambulanceData = [
@@ -354,7 +480,7 @@ export const seedIndianData = async () => {
       assignedDriver: driver2._id,
       driverName: 'Manoj Shinde',
       contactPhone: '+91 98221 77889',
-      destinationFacility: facilities[0]._id,
+      destinationFacility: facilityMap['Pune Central Emergency Hospital'],
       equipment: ['BLS Kit', 'Stretcher', 'Oxygen Tank', 'Suction Unit'],
       isActive: true,
     },
@@ -370,7 +496,7 @@ export const seedIndianData = async () => {
       fuelLevel: 65,
       driverName: 'Santosh Patil',
       contactPhone: '+91 98220 99881',
-      destinationFacility: facilities[1]._id,
+      destinationFacility: facilityMap['Pimpri Emergency Medical Centre'],
       equipment: ['ALS Telemetry', 'Defibrillator', 'Infusion Pump'],
       isActive: true,
     },
@@ -385,8 +511,8 @@ export const seedIndianData = async () => {
       address: 'Dutta Mandir Road, Wakad, Pune, Maharashtra 411057',
       fuelLevel: 84,
       driverName: 'Vikram Ghorpade',
-      contactPhone: '+91 98220 88772',
-      destinationFacility: facilities[4]._id,
+      contactPhone: '+91 98200 88772',
+      destinationFacility: facilityMap['Hinjawadi LifeLine Medical Centre'],
       equipment: ['Mobile ICU Suite', 'Dual Ventilator', 'Arterial Line Monitor'],
       isActive: true,
     },
@@ -432,7 +558,7 @@ export const seedIndianData = async () => {
       fuelLevel: 95,
       driverName: 'Amit Bhosle',
       contactPhone: '+91 98200 44551',
-      destinationFacility: facilities[5]._id,
+      destinationFacility: facilityMap['Mumbai City Trauma & Acute Care Centre'],
       equipment: ['ALS Cardiac Monitor', 'Resuscitator', 'Spinal Board'],
       isActive: true,
     },
@@ -448,14 +574,23 @@ export const seedIndianData = async () => {
       fuelLevel: 80,
       driverName: 'Nitin Chavan',
       contactPhone: '+91 98200 66772',
-      destinationFacility: facilities[6]._id,
+      destinationFacility: facilityMap['Navi Mumbai Regional Emergency Hospital'],
       equipment: ['BLS Trauma Care Kit', 'O2 Resuscitator'],
       isActive: true,
     },
   ];
 
-  const ambulances = await Ambulance.create(ambulanceData);
-  logger.info(`Seeded ${ambulances.length} synthetic Indian ambulances.`);
+  const seededAmbulances = [];
+  for (const amb of ambulanceData) {
+    const doc = await Ambulance.findOneAndUpdate(
+      { ambulanceId: amb.ambulanceId },
+      { $set: amb },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+    seededAmbulances.push(doc);
+  }
+
+  logger.info(`Idempotently synchronized ${seededAmbulances.length} ambulances.`);
 
   // 4. Seed Emergency Dispatches / Incidents
   const dispatchData = [
@@ -470,11 +605,11 @@ export const seedIndianData = async () => {
           longitude: 73.7789,
         },
       },
-      destinationFacility: facilities[0]._id, // Pune Central
+      destinationFacility: facilityMap['Pune Central Emergency Hospital'],
       triageLevel: 'critical',
       status: 'en_route',
       assignedDriver: driver2._id,
-      assignedAmbulance: ambulances[1]._id,
+      assignedAmbulance: seededAmbulances[1]?._id,
       vehicleType: 'als_ambulance',
       symptoms: ['Acute crushing chest pain', 'Diaphoresis', 'Shortness of breath'],
       aiAssessment: {
@@ -500,11 +635,11 @@ export const seedIndianData = async () => {
           longitude: 73.8052,
         },
       },
-      destinationFacility: facilities[1]._id, // Pimpri Emergency
+      destinationFacility: facilityMap['Pimpri Emergency Medical Centre'],
       triageLevel: 'urgent',
       status: 'assigned',
       assignedDriver: driver1._id,
-      assignedAmbulance: ambulances[2]._id,
+      assignedAmbulance: seededAmbulances[2]?._id,
       vehicleType: 'bls_ambulance',
       symptoms: ['Suspected compound fracture of right tibia', 'Severe localized pain following two-wheeler collision'],
       aiAssessment: {
@@ -530,10 +665,10 @@ export const seedIndianData = async () => {
           longitude: 73.8415,
         },
       },
-      destinationFacility: facilities[2]._id, // Sahyadri
+      destinationFacility: facilityMap['Sahyadri Acute Trauma Care Centre'],
       triageLevel: 'critical',
       status: 'pending',
-      assignedAmbulance: ambulances[0]._id,
+      assignedAmbulance: seededAmbulances[0]?._id,
       vehicleType: 'als_ambulance',
       symptoms: ['Loss of consciousness', 'Head injury with active temporal bleed', 'Decreased responsiveness'],
       aiAssessment: {
@@ -559,10 +694,10 @@ export const seedIndianData = async () => {
           longitude: 73.7621,
         },
       },
-      destinationFacility: facilities[4]._id, // Hinjawadi
+      destinationFacility: facilityMap['Hinjawadi LifeLine Medical Centre'],
       triageLevel: 'urgent',
       status: 'arrived',
-      assignedAmbulance: ambulances[3]._id,
+      assignedAmbulance: seededAmbulances[3]?._id,
       vehicleType: 'mobile_icu',
       symptoms: ['Severe respiratory distress', 'Asthmatic exacerbation', 'SpO2 88% on ambient air'],
       aiAssessment: {
@@ -588,10 +723,10 @@ export const seedIndianData = async () => {
           longitude: 72.9995,
         },
       },
-      destinationFacility: facilities[6]._id, // Navi Mumbai Hospital
+      destinationFacility: facilityMap['Navi Mumbai Regional Emergency Hospital'],
       triageLevel: 'urgent',
       status: 'en_route',
-      assignedAmbulance: ambulances[7]._id,
+      assignedAmbulance: seededAmbulances[7]?._id,
       vehicleType: 'bls_ambulance',
       symptoms: ['High grade fever (103.5 F) with febrile convulsions', 'Pediatric emergency'],
       aiAssessment: {
@@ -617,7 +752,7 @@ export const seedIndianData = async () => {
           longitude: 73.8585,
         },
       },
-      destinationFacility: facilities[0]._id,
+      destinationFacility: facilityMap['Pune Central Emergency Hospital'],
       triageLevel: 'standard',
       status: 'completed',
       vehicleType: 'standard_transport',
@@ -626,14 +761,31 @@ export const seedIndianData = async () => {
     },
   ];
 
-  const dispatches = await Dispatch.create(dispatchData);
-  logger.info(`Seeded ${dispatches.length} synthetic Indian emergency dispatches.`);
+  const seededDispatches = [];
+  for (const disp of dispatchData) {
+    const doc = await Dispatch.findOneAndUpdate(
+      { dispatchNumber: disp.dispatchNumber },
+      { $set: disp },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+    seededDispatches.push(doc);
+  }
+
+  logger.info(`Idempotently synchronized ${seededDispatches.length} emergency dispatches.`);
 
   // Link ambulance currentDispatch references realistically
-  await Ambulance.findByIdAndUpdate(ambulances[1]._id, { currentDispatch: dispatches[0]._id });
-  await Ambulance.findByIdAndUpdate(ambulances[2]._id, { currentDispatch: dispatches[1]._id });
-  await Ambulance.findByIdAndUpdate(ambulances[3]._id, { currentDispatch: dispatches[3]._id });
-  await Ambulance.findByIdAndUpdate(ambulances[7]._id, { currentDispatch: dispatches[4]._id });
+  if (seededAmbulances[1] && seededDispatches[0]) {
+    await Ambulance.findByIdAndUpdate(seededAmbulances[1]._id, { currentDispatch: seededDispatches[0]._id });
+  }
+  if (seededAmbulances[2] && seededDispatches[1]) {
+    await Ambulance.findByIdAndUpdate(seededAmbulances[2]._id, { currentDispatch: seededDispatches[1]._id });
+  }
+  if (seededAmbulances[3] && seededDispatches[3]) {
+    await Ambulance.findByIdAndUpdate(seededAmbulances[3]._id, { currentDispatch: seededDispatches[3]._id });
+  }
+  if (seededAmbulances[7] && seededDispatches[4]) {
+    await Ambulance.findByIdAndUpdate(seededAmbulances[7]._id, { currentDispatch: seededDispatches[4]._id });
+  }
 
   logger.info('==================================================');
   logger.info('SYNTHETIC INDIAN DATA SEEDING COMPLETED SUCCESSFULLY!');
