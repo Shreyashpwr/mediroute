@@ -91,22 +91,14 @@ a {
 .navbar-brand {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-weight: 700;
-  font-size: 1.25rem;
-  color: var(--primary);
+  text-decoration: none;
 }
 
-.brand-icon {
-  background: var(--primary);
-  color: white;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-sm);
-  font-size: 1rem;
+.navbar-brand-logo {
+  width: 155px;
+  height: auto;
+  object-fit: contain;
+  display: block;
 }
 
 .navbar-nav {
@@ -821,6 +813,10 @@ a {
    Responsive Breakpoints
    ========================================================================== */
 @media (max-width: 768px) {
+  .navbar-brand-logo {
+    width: 135px;
+  }
+
   .mobile-toggle {
     display: flex;
   }

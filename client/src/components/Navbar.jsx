@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import logo from '../assets/mediroute-logo-transparent.png';
 
 export const Navbar = () => {
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
@@ -27,9 +28,8 @@ export const Navbar = () => {
   return (
     <header className="navbar">
       <div className="navbar-container">
-        <Link to="/" className="navbar-brand" onClick={closeMobileMenu}>
-          <span className="brand-icon">🚨</span>
-          <span className="brand-name">MediRoute <span className="brand-badge-ops">OPS</span></span>
+        <Link to="/" className="navbar-brand" onClick={closeMobileMenu} aria-label="MediRoute Home">
+          <img src={logo} alt="MediRoute" className="navbar-brand-logo" />
         </Link>
 
         {/* Mobile menu toggle */}
