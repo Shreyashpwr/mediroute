@@ -10,7 +10,7 @@ import {
 import logger from '../utils/logger.js';
 import AppError from '../utils/appError.js';
 
-export const GEMINI_MODEL = 'gemini-3.7-flash';
+export const GEMINI_MODEL = 'gemini-3.6-flash';
 export const GEMINI_API_ENDPOINT =
   `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
