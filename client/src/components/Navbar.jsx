@@ -56,6 +56,9 @@ export const Navbar = () => {
             <NavLink to="/facilities" className={getNavLinkClass} onClick={closeMobileMenu}>
               Hospital Network
             </NavLink>
+            <NavLink to="/benchmarks" className={getNavLinkClass} onClick={closeMobileMenu}>
+              Simulation Lab
+            </NavLink>
             {isAdmin && (
               <NavLink to="/admin/users" className={getNavLinkClass} onClick={closeMobileMenu}>
                 🛡️ Admin Dashboard

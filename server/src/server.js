@@ -5,6 +5,7 @@ import { config } from './config/env.js';
 import { connectDB, disconnectDB } from './config/db.js';
 import { logger } from './utils/logger.js';
 import { bootstrapAdmin } from './utils/bootstrapAdmin.js';
+import { initSocketManager } from './services/realtime/socketManager.js';
 
 let io = null;
 
@@ -56,13 +57,7 @@ const startServer = async () => {
       credentials: true,
     },
   });
-
-  io.on('connection', (socket) => {
-    logger.info(`Socket.io client connected: ${socket.id}`);
-    socket.on('disconnect', () => {
-      logger.info(`Socket.io client disconnected: ${socket.id}`);
-    });
-  });
+  initSocketManager(io);
 
   // Listen on 0.0.0.0 and process.env.PORT
   httpServer.listen(config.port, '0.0.0.0', () => {

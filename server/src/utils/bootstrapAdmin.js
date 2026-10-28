@@ -16,6 +16,14 @@ export const bootstrapAdmin = async () => {
 
     const adminCount = await User.countDocuments({ role: 'admin' });
 
+    const isProd = process.env.NODE_ENV === 'production';
+    if (isProd && !process.env.ADMIN_PASSWORD && adminCount === 0) {
+      logger.error(
+        'SECURITY ALERT: ADMIN_PASSWORD environment variable is required in production to bootstrap an initial administrator. Administrator bootstrap aborted.'
+      );
+      return;
+    }
+
     const adminEmail = (process.env.ADMIN_EMAIL || 'admin@mediroute.io').toLowerCase().trim();
     const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123456';
     const adminName = process.env.ADMIN_NAME || 'System Administrator';

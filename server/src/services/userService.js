@@ -109,10 +109,13 @@ export const updateUserRole = async (id, newRole) => {
 };
 
 export const updateUser = async (id, updateData) => {
-  // Prevent arbitrary alteration of approvalStatus via generic update
+  // Prevent arbitrary alteration of sensitive fields via generic update
   delete updateData.approvalStatus;
   delete updateData.approvedAt;
   delete updateData.approvedBy;
+  delete updateData.rejectionReason;
+  delete updateData.role;
+  delete updateData.password;
 
   const user = await User.findByIdAndUpdate(id, updateData, {
     new: true,

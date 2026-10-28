@@ -1,0 +1,4 @@
+Algorithm,Scenario,Seed,TotalIncidents,CompletedIncidents,UnservedIncidents,UnservedRate,MeanResponseTimeMin,MedianResponseTimeMin,P95ResponseTimeMin,MeanTransitTimeMin,RouteCorrectness,AmbulanceUtilization,FacilityBedUtilization,AvgAlgorithmComputeMs,Timestamp
+proposed,standard_day,999,5,1,4,0.8,5.62,5.62,5.62,14,1,0.059,0.567,0.905,2026-10-27T21:51:47.918Z
+nearest_available,standard_day,999,5,1,4,0.8,5.62,5.62,5.62,14,1,0.059,0.568,0.003,2026-10-27T21:51:47.918Z
+shortest_path_dijkstra,standard_day,999,5,1,4,0.8,5.62,5.62,5.62,14,1,0.059,0.568,0.833,2026-10-27T21:51:47.918Z

@@ -9,6 +9,8 @@ import {
 } from '../config/aiPrompts.js';
 import logger from '../utils/logger.js';
 import AppError from '../utils/appError.js';
+import { calculateDeterministicRoute } from './routing/graphAdapter.js';
+import { evaluateAllocation } from './allocationService.js';
 
 export const GEMINI_MODEL = 'gemini-3.6-flash';
 export const GEMINI_API_ENDPOINT =
@@ -72,7 +74,7 @@ export const callGeminiApi = async (systemInstruction, userPrompt, retryCount = 
   }
 
   const apiKey = config.geminiApiKey;
-  const url = `${GEMINI_API_ENDPOINT}?key=${apiKey}`;
+  const url = GEMINI_API_ENDPOINT;
   const payload = {
     contents: [
       {
@@ -98,6 +100,7 @@ export const callGeminiApi = async (systemInstruction, userPrompt, retryCount = 
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey,
       },
       body: JSON.stringify(payload),
       signal: controller.signal,
@@ -292,7 +295,8 @@ export const getDispatchAssistance = async ({
   ambulances = [],
   facilities = [],
 }) => {
-  const prompt = createDispatchAssistancePrompt({
+  // 1. Evaluate candidate resources with deterministic multi-criteria engine
+  const allocation = await evaluateAllocation({
     incidentLocation,
     triageLevel,
     symptoms,
@@ -300,67 +304,89 @@ export const getDispatchAssistance = async ({
     facilities,
   });
 
-  try {
-    const aiResult = await callGeminiApi(SYSTEM_INSTRUCTIONS.DISPATCH_ASSISTANCE, prompt);
-    if (!aiResult) {
-      // Deterministic resource matching
-      const availableAmbs = ambulances.filter(a => a.status === 'available');
-      const targetAmbs = availableAmbs.length > 0 ? availableAmbs : ambulances;
-
-      let selectedAmb = targetAmbs[0] || null;
-      if (triageLevel === 'critical') {
-        const als = targetAmbs.find(a => a.vehicleType === 'als_ambulance' || a.vehicleType === 'mobile_icu');
-        if (als) selectedAmb = als;
-      }
-
-      const activeFacs = facilities.filter(f => f.emergencyCapacity?.status !== 'divert');
-      const targetFacs = activeFacs.length > 0 ? activeFacs : facilities;
-
-      let selectedFac = targetFacs[0] || null;
-      if (triageLevel === 'critical') {
-        const trauma = targetFacs.find(f => f.facilityType === 'trauma_center' && (f.emergencyCapacity?.icuAvailable ?? 0) > 0);
-        if (trauma) selectedFac = trauma;
-      }
-
-      return {
-        recommendationLabel: AI_RECOMMENDATION_LABEL,
-        disclaimer: AI_DECISION_SUPPORT_DISCLAIMER,
-        requiresHumanConfirmation: true,
-        recommendedAmbulanceId: selectedAmb?._id || selectedAmb?.id || null,
-        ambulanceIdTag: selectedAmb?.ambulanceId || 'MH-12-AMB-101',
-        ambulanceRationale: selectedAmb
-          ? `Allocated ${selectedAmb.ambulanceId} (${selectedAmb.vehicleType}) due to available status and proximity.`
-          : 'No dedicated ambulance unit currently unassigned; nearest unit recommended.',
-        recommendedFacilityId: selectedFac?._id || selectedFac?.id || null,
-        facilityName: selectedFac?.name || 'Central Emergency Hospital',
-        facilityRationale: selectedFac
-          ? `Recommended ${selectedFac.name} based on ${triageLevel} priority and bed capacity (${selectedFac.emergencyCapacity?.availableBeds || 0} beds, ${selectedFac.emergencyCapacity?.icuAvailable || 0} ICU).`
-          : 'Selected closest active intake hospital.',
-        operationalNotes: 'Pre-alert emergency intake desk prior to transit.',
-        etaEstimateMinutes: triageLevel === 'critical' ? 7 : 12,
-        source: 'deterministic_fallback',
-        evaluatedAt: new Date().toISOString(),
-      };
-    }
-
+  if (!allocation.isFeasible) {
     return {
       recommendationLabel: AI_RECOMMENDATION_LABEL,
       disclaimer: AI_DECISION_SUPPORT_DISCLAIMER,
       requiresHumanConfirmation: true,
-      recommendedAmbulanceId: aiResult.recommendedAmbulanceId,
-      ambulanceRationale: aiResult.ambulanceRationale || 'Recommended based on unit availability and emergency equipment.',
-      recommendedFacilityId: aiResult.recommendedFacilityId,
-      facilityRationale: aiResult.facilityRationale || 'Recommended based on available emergency and ICU capacity.',
-      operationalNotes: aiResult.operationalNotes || '',
-      etaEstimateMinutes: Number(aiResult.etaEstimateMinutes) || 10,
-      source: 'gemini',
-      evaluatedAt: new Date().toISOString(),
+      isFeasible: false,
+      recommendedAmbulanceId: null,
+      ambulanceIdTag: null,
+      ambulanceRationale: allocation.failureReason || 'No feasible ambulance found matching constraints.',
+      recommendedFacilityId: null,
+      facilityName: null,
+      facilityRationale: allocation.failureReason || 'No feasible facility found matching constraints.',
+      operationalNotes: 'Immediate dispatcher intervention required: dispatch constraints could not be satisfied.',
+      etaEstimateMinutes: 0,
+      source: 'deterministic_allocation',
+      evaluatedAt: allocation.evaluatedAt,
+      rejectedAmbulances: allocation.rejectedAmbulances,
+      rejectedFacilities: allocation.rejectedFacilities,
     };
-  } catch (err) {
-    if (err instanceof AppError) throw err;
-    logger.error('Error during dispatch assistance:', err.message);
-    throw new AppError(`Dispatch assistance failed: ${err.message}`, 500);
   }
+
+  const selectedAmb = allocation.selectedAmbulance;
+  const selectedFac = allocation.selectedFacility;
+  let operationalNotes = 'Pre-alert emergency intake desk prior to transit.';
+
+  let ambulanceRationale = `Allocated ${selectedAmb.ambulanceId} (${selectedAmb.vehicleType}) with multi-criteria score ${selectedAmb.score} (ETA: ${selectedAmb.estimatedEtaMinutes} min).`;
+  let facilityRationale = `Recommended ${selectedFac.name} based on ${triageLevel} priority and capacity (${selectedFac.availableBeds} beds, ${selectedFac.icuAvailable} ICU beds, score: ${selectedFac.score}).`;
+
+  // 2. If Gemini is configured, use it solely for qualitative narrative explanation
+  try {
+    const prompt = createDispatchAssistancePrompt({
+      incidentLocation,
+      triageLevel,
+      symptoms,
+      ambulances: [selectedAmb],
+      facilities: [selectedFac],
+    });
+    const aiResult = await callGeminiApi(SYSTEM_INSTRUCTIONS.DISPATCH_ASSISTANCE, prompt);
+    if (aiResult) {
+      if (aiResult.operationalNotes) operationalNotes = aiResult.operationalNotes;
+      if (aiResult.ambulanceRationale) ambulanceRationale = `${ambulanceRationale} Note: ${aiResult.ambulanceRationale}`;
+      if (aiResult.facilityRationale) facilityRationale = `${facilityRationale} Note: ${aiResult.facilityRationale}`;
+    }
+  } catch (err) {
+    logger.warn(`[Gemini Diagnostics] AI dispatch assistance explanation unavailable (${err.message}). Using deterministic rationale.`);
+  }
+
+  return {
+    recommendationLabel: AI_RECOMMENDATION_LABEL,
+    disclaimer: AI_DECISION_SUPPORT_DISCLAIMER,
+    requiresHumanConfirmation: true,
+    isFeasible: true,
+    recommendedAmbulanceId: selectedAmb.id,
+    ambulanceIdTag: selectedAmb.ambulanceId,
+    ambulanceRationale,
+    recommendedFacilityId: selectedFac.id,
+    facilityName: selectedFac.name,
+    facilityRationale,
+    operationalNotes,
+    etaEstimateMinutes: selectedAmb.estimatedEtaMinutes,
+    source: 'deterministic_allocation',
+    evaluatedAt: allocation.evaluatedAt,
+    allocationDetails: {
+      ambulanceScore: selectedAmb.score,
+      facilityScore: selectedFac.score,
+      scoringEquation: allocation.scoringEquation,
+      weights: allocation.weights,
+      rawMetrics: {
+        ambulance: selectedAmb.rawMetrics,
+        facility: selectedFac.rawMetrics,
+      },
+      normalizedMetrics: {
+        ambulance: selectedAmb.normalizedMetrics,
+        facility: selectedFac.normalizedMetrics,
+      },
+      feasibleAmbulanceCount: allocation.feasibleAmbulances.length,
+      rejectedAmbulanceCount: allocation.rejectedAmbulances.length,
+      feasibleFacilityCount: allocation.feasibleFacilities.length,
+      rejectedFacilityCount: allocation.rejectedFacilities.length,
+      rejectedAmbulances: allocation.rejectedAmbulances,
+      rejectedFacilities: allocation.rejectedFacilities,
+    },
+  };
 };
 
 /**
@@ -372,9 +398,41 @@ export const optimizeRoute = async ({
   trafficCondition = 'moderate',
   triageLevel = 'standard',
   vehicleType = 'standard_transport',
+  algorithm = 'a_star',
+  costMetric = 'time',
+  roadClosures = [],
+  congestionOverrides = {},
 }) => {
   if (!origin || !destination) {
     throw new AppError('Both origin and destination endpoints are required for route optimization', 400);
+  }
+
+  // 1. Calculate deterministic shortest path on the road network
+  const deterministicResult = calculateDeterministicRoute({
+    origin,
+    destination,
+    algorithm,
+    costMetric,
+    trafficCondition,
+    triageLevel,
+    roadClosures,
+    congestionOverrides,
+  });
+
+  // If validation failed
+  if (!deterministicResult.success && !deterministicResult.isGraphRouted && deterministicResult.source !== 'standard_route_fallback') {
+    throw new AppError(deterministicResult.failureReason || 'Routing calculation could not be completed', 400);
+  }
+
+  // 2. Prepare narrative explanation.
+  // Gemini is used solely for narrative explanation and human-digestible dispatch summary;
+  // it never calculates or overrides the deterministic graph route or cost.
+  let reasoning = deterministicResult.isGraphRouted
+    ? `Deterministic ${deterministicResult.algorithm.toUpperCase()} routing selected corridor "${deterministicResult.recommendedRouteName}" based on real-time road topology, speed limits, and ${trafficCondition} traffic.`
+    : `Standard route calculation applied (${deterministicResult.fallbackReason || 'Outside demonstration network'}).`;
+
+  if (deterministicResult.avoidedHazards?.length > 0) {
+    reasoning += ` Path actively circumvents: ${deterministicResult.avoidedHazards.join(', ')}.`;
   }
 
   const prompt = createRouteOptimizationPrompt({
@@ -383,69 +441,48 @@ export const optimizeRoute = async ({
     trafficCondition,
     triageLevel,
     vehicleType,
+    calculatedRoute: {
+      corridorName: deterministicResult.recommendedRouteName,
+      distanceKm: deterministicResult.totalDistanceKm,
+      durationMinutes: deterministicResult.estimatedDurationMinutes,
+      avoidedHazards: deterministicResult.avoidedHazards,
+      isGraphRouted: deterministicResult.isGraphRouted,
+    },
   });
 
   try {
     const aiResult = await callGeminiApi(SYSTEM_INSTRUCTIONS.ROUTE_OPTIMIZATION, prompt);
-    if (!aiResult) {
-      const isPriority = triageLevel === 'critical' || triageLevel === 'urgent';
-      return {
-        recommendationLabel: AI_RECOMMENDATION_LABEL,
-        disclaimer: AI_DECISION_SUPPORT_DISCLAIMER,
-        requiresHumanConfirmation: true,
-        recommendedRouteName: isPriority ? 'Emergency Arterial Priority Corridor' : 'Standard Highway Transit Route',
-        reasoning: `Selected corridor avoids peak city-center intersections based on reported ${trafficCondition} traffic conditions.`,
-        avoidedHazards: ['Dense market traffic on main arterial', 'Construction corridor along inner ring road'],
-        estimatedTimeSavedMinutes: isPriority ? 8 : 4,
-        priorityLaneEligible: isPriority,
-        source: 'deterministic_fallback',
-      };
+    if (aiResult && aiResult.reasoning) {
+      reasoning = aiResult.reasoning;
     }
-
-    return {
-      recommendationLabel: AI_RECOMMENDATION_LABEL,
-      disclaimer: AI_DECISION_SUPPORT_DISCLAIMER,
-      requiresHumanConfirmation: true,
-      recommendedRouteName: aiResult.recommendedRouteName || 'Optimized Medical Corridor',
-      reasoning: aiResult.reasoning || 'Route calculated for minimal transit resistance.',
-      avoidedHazards: Array.isArray(aiResult.avoidedHazards) ? aiResult.avoidedHazards : [],
-      estimatedTimeSavedMinutes: Number(aiResult.estimatedTimeSavedMinutes) || 0,
-      priorityLaneEligible: Boolean(aiResult.priorityLaneEligible),
-      source: 'gemini',
-    };
   } catch (err) {
-    const isTransient =
-      err.isTransient ||
-      err.statusCode === 429 ||
-      err.statusCode === 500 ||
-      err.statusCode === 502 ||
-      err.statusCode === 503 ||
-      err.statusCode === 504 ||
-      /high demand|unavailable|overloaded|resource exhausted|rate limit|quota|temporarily|timeout/i.test(err.message);
-
-    if (isTransient) {
-      logger.warn(
-        `[Gemini Diagnostics] Route optimization Gemini API unavailable (${err.message}). Falling back to standard route calculation.`
-      );
-      const isPriority = triageLevel === 'critical' || triageLevel === 'urgent';
-      return {
-        recommendationLabel: AI_RECOMMENDATION_LABEL,
-        disclaimer: AI_DECISION_SUPPORT_DISCLAIMER,
-        requiresHumanConfirmation: true,
-        recommendedRouteName: isPriority ? 'Emergency Arterial Priority Corridor (Standard Route)' : 'Standard Highway Transit Route',
-        reasoning: 'AI route optimization is temporarily unavailable. The standard route remains available.',
-        avoidedHazards: ['Traffic monitoring active on primary thoroughfare'],
-        estimatedTimeSavedMinutes: isPriority ? 5 : 0,
-        priorityLaneEligible: isPriority,
-        source: 'standard_route_fallback',
-        isAiUnavailable: true,
-      };
-    }
-
-    if (err instanceof AppError) throw err;
-    logger.error('Error during route optimization:', err.message);
-    throw new AppError(`Route optimization failed: ${err.message}`, 500);
+    // If Gemini fails or times out, the deterministic calculation remains completely authoritative
+    logger.warn(`[Gemini Diagnostics] Route narrative explanation unavailable (${err.message}). Using deterministic reasoning.`);
   }
+
+  return {
+    recommendationLabel: AI_RECOMMENDATION_LABEL,
+    disclaimer: AI_DECISION_SUPPORT_DISCLAIMER,
+    requiresHumanConfirmation: true,
+    recommendedRouteName: deterministicResult.recommendedRouteName,
+    corridorName: deterministicResult.corridorName,
+    reasoning,
+    avoidedHazards: deterministicResult.avoidedHazards || [],
+    estimatedTimeSavedMinutes: deterministicResult.estimatedTimeSavedMinutes || 0,
+    priorityLaneEligible: Boolean(deterministicResult.priorityLaneEligible),
+    totalDistanceKm: deterministicResult.totalDistanceKm,
+    estimatedDurationMinutes: deterministicResult.estimatedDurationMinutes,
+    totalCost: deterministicResult.totalCost,
+    algorithm: deterministicResult.algorithm,
+    costMetric: deterministicResult.costMetric,
+    expandedNodeCount: deterministicResult.expandedNodeCount,
+    nodeSequence: deterministicResult.nodeSequence || [],
+    edgeSequence: deterministicResult.edgeSequence || [],
+    waypoints: deterministicResult.waypoints || [],
+    isGraphRouted: Boolean(deterministicResult.isGraphRouted),
+    source: deterministicResult.source,
+    graphMetadata: deterministicResult.graphMetadata,
+  };
 };
 
 /**
@@ -456,58 +493,63 @@ export const recommendFacility = async ({ triageLevel = 'standard', symptoms, fa
     throw new AppError('No facilities provided to recommend from', 400);
   }
 
-  const activeFacilities = facilities.filter(
-    (f) => f.isActive !== false && f.emergencyCapacity?.status !== 'divert'
-  );
-  const targetFacilities = activeFacilities.length > 0 ? activeFacilities : facilities;
-
-  const prompt = createFacilityMatchingPrompt({
+  // Evaluate facilities using deterministic multi-criteria engine
+  const allocation = await evaluateAllocation({
     triageLevel,
     symptoms,
-    facilities: targetFacilities,
+    facilities,
+    ambulances: [], // only facilities evaluated
   });
 
-  try {
-    const aiResult = await callGeminiApi(SYSTEM_INSTRUCTIONS.FACILITY_RECOMMENDATION, prompt);
-    if (!aiResult || !aiResult.recommendedFacilityId) {
-      let best = targetFacilities[0];
-      if (triageLevel === 'critical') {
-        const trauma = targetFacilities.find(
-          (f) => f.facilityType === 'trauma_center' && (f.emergencyCapacity?.icuAvailable ?? 0) > 0
-        );
-        if (trauma) best = trauma;
-      } else if (triageLevel === 'urgent') {
-        const hosp = targetFacilities.find(
-          (f) => f.facilityType === 'hospital' && (f.emergencyCapacity?.availableBeds ?? 0) > 0
-        );
-        if (hosp) best = hosp;
-      }
-
-      return {
-        recommendationLabel: AI_RECOMMENDATION_LABEL,
-        disclaimer: AI_DECISION_SUPPORT_DISCLAIMER,
-        requiresHumanConfirmation: true,
-        recommendedFacilityId: best._id || best.id,
-        facilityName: best.name,
-        clinicalJustification: `Recommended based on ${triageLevel} priority and capacity (${best.emergencyCapacity?.availableBeds || 0} beds, ${best.emergencyCapacity?.icuAvailable || 0} ICU beds).`,
-        alternativeFacilityId: targetFacilities[1] ? (targetFacilities[1]._id || targetFacilities[1].id) : null,
-        source: 'deterministic_fallback',
-      };
-    }
-
+  if (!allocation.selectedFacility) {
     return {
       recommendationLabel: AI_RECOMMENDATION_LABEL,
       disclaimer: AI_DECISION_SUPPORT_DISCLAIMER,
       requiresHumanConfirmation: true,
-      recommendedFacilityId: aiResult.recommendedFacilityId,
-      facilityName: aiResult.facilityName,
-      clinicalJustification: aiResult.clinicalJustification,
-      alternativeFacilityId: aiResult.alternativeFacilityId || null,
-      source: 'gemini',
+      isFeasible: false,
+      recommendedFacilityId: null,
+      facilityName: null,
+      clinicalJustification: allocation.failureReason || 'No feasible facility found satisfying clinical and capacity constraints.',
+      alternativeFacilityId: null,
+      source: 'deterministic_allocation',
+      rejectedFacilities: allocation.rejectedFacilities,
     };
-  } catch (err) {
-    if (err instanceof AppError) throw err;
-    logger.error('Error during facility recommendation:', err.message);
-    throw new AppError(`Facility recommendation failed: ${err.message}`, 500);
   }
+
+  const best = allocation.selectedFacility;
+  const alt = allocation.feasibleFacilities[1] || null;
+  let clinicalJustification = `Recommended ${best.name} based on ${triageLevel} priority and capacity (${best.availableBeds} beds, ${best.icuAvailable} ICU beds, score: ${best.score}).`;
+
+  try {
+    const prompt = createFacilityMatchingPrompt({
+      triageLevel,
+      symptoms,
+      facilities: [best],
+    });
+    const aiResult = await callGeminiApi(SYSTEM_INSTRUCTIONS.FACILITY_RECOMMENDATION, prompt);
+    if (aiResult?.clinicalJustification) {
+      clinicalJustification = `${clinicalJustification} Clinical note: ${aiResult.clinicalJustification}`;
+    }
+  } catch (err) {
+    logger.warn(`[Gemini Diagnostics] AI facility recommendation explanation unavailable (${err.message}). Using deterministic rationale.`);
+  }
+
+  return {
+    recommendationLabel: AI_RECOMMENDATION_LABEL,
+    disclaimer: AI_DECISION_SUPPORT_DISCLAIMER,
+    requiresHumanConfirmation: true,
+    recommendedFacilityId: best.id,
+    facilityName: best.name,
+    clinicalJustification,
+    alternativeFacilityId: alt ? alt.id : null,
+    source: 'deterministic_allocation',
+    allocationDetails: {
+      facilityScore: best.score,
+      rawMetrics: best.rawMetrics,
+      normalizedMetrics: best.normalizedMetrics,
+      feasibleFacilityCount: allocation.feasibleFacilities.length,
+      rejectedFacilityCount: allocation.rejectedFacilities.length,
+      rejectedFacilities: allocation.rejectedFacilities,
+    },
+  };
 };

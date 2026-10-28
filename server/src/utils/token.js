@@ -7,7 +7,11 @@ import { config } from '../config/env.js';
  * @returns {string} Signed JWT token
  */
 export const generateToken = (userId) => {
+  if (!config.jwtSecret) {
+    throw new Error('JWT_SECRET is not configured.');
+  }
   return jwt.sign({ id: userId }, config.jwtSecret, {
+    algorithm: 'HS256',
     expiresIn: config.jwtExpiresIn,
   });
 };
@@ -18,7 +22,12 @@ export const generateToken = (userId) => {
  * @returns {object} Decoded token payload
  */
 export const verifyToken = (token) => {
-  return jwt.verify(token, config.jwtSecret);
+  if (!config.jwtSecret) {
+    throw new Error('JWT_SECRET is not configured.');
+  }
+  return jwt.verify(token, config.jwtSecret, {
+    algorithms: ['HS256'],
+  });
 };
 
 export default {

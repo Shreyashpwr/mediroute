@@ -1,0 +1,4 @@
+Algorithm,Scenario,Seed,TotalIncidents,CompletedIncidents,UnservedIncidents,UnservedRate,MeanResponseTimeMin,MedianResponseTimeMin,P95ResponseTimeMin,MeanTransitTimeMin,RouteCorrectness,AmbulanceUtilization,FacilityBedUtilization,AvgAlgorithmComputeMs,Timestamp
+proposed,arterial_gridlock,77,6,2,4,0.6667,3,3,3,14,1,0.1263,0.57,2.085,2026-10-27T21:23:38.216Z
+nearest_available,arterial_gridlock,77,6,4,2,0.3333,5.058,3,9.995,14,1,0.2821,0.58,0.051,2026-10-27T21:23:38.216Z
+shortest_path_dijkstra,arterial_gridlock,77,6,4,2,0.3333,9.558,11.615,12,14,1,0.3196,0.579,2.5,2026-10-27T21:23:38.216Z

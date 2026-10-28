@@ -11,6 +11,7 @@ import FacilityStatusWidget from '../components/FacilityStatusWidget.jsx';
 import NewDispatchModal from '../components/NewDispatchModal.jsx';
 import OperationalMap from '../components/OperationalMap.jsx';
 import AiAssistantModal from '../components/AiAssistantModal.jsx';
+import socketService, { REALTIME_EVENTS } from '../services/socket.js';
 
 export const HomePage = () => {
   const [dispatches, setDispatches] = useState([]);
@@ -75,12 +76,26 @@ export const HomePage = () => {
   useEffect(() => {
     fetchDashboardData();
 
-    // Auto-refresh operational metrics every 30 seconds
+    // Instant real-time update listeners
+    const unsubCreated = socketService.subscribe(REALTIME_EVENTS.DISPATCH_CREATED, () => fetchDashboardData(true));
+    const unsubAssigned = socketService.subscribe(REALTIME_EVENTS.DISPATCH_ASSIGNED, () => fetchDashboardData(true));
+    const unsubStatus = socketService.subscribe(REALTIME_EVENTS.DISPATCH_STATUS, () => fetchDashboardData(true));
+    const unsubCapacity = socketService.subscribe(REALTIME_EVENTS.FACILITY_CAPACITY, () => fetchDashboardData(true));
+    const unsubReconnect = socketService.onReconnect(() => fetchDashboardData(true));
+
+    // Fallback polling every 30 seconds
     const interval = setInterval(() => {
       fetchDashboardData(true);
     }, 30000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      unsubCreated();
+      unsubAssigned();
+      unsubStatus();
+      unsubCapacity();
+      unsubReconnect();
+    };
   }, [fetchDashboardData]);
 
   // Operational Statistics

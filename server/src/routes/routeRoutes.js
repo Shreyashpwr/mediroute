@@ -5,9 +5,17 @@ import {
   createRouteLog,
   getRoutesByDispatch,
   getRouteById,
+  planRoute,
+  getRoadNetworkGraph,
+  updateRoadCondition,
 } from '../controllers/routeController.js';
 
 const router = Router();
+
+// Deterministic Graph Routing & Inspection
+router.post('/plan', protect, requireBodyFields(['origin', 'destination']), planRoute);
+router.get('/network-graph', protect, getRoadNetworkGraph);
+router.post('/network-condition', protect, authorize('admin', 'dispatcher'), requireBodyFields(['edgeId']), updateRoadCondition);
 
 router.route('/')
   .post(protect, authorize('admin', 'dispatcher', 'driver'), requireBodyFields(['dispatch', 'origin', 'destination']), createRouteLog);

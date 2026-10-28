@@ -251,12 +251,26 @@ export const DispatchCard = ({ dispatch, onStatusUpdated }) => {
         <div className="route-opt-drawer">
           <div className="route-opt-header">
             <span className="route-opt-corridor">🛣️ {optimizedRoute.recommendedRouteName}</span>
-            {optimizedRoute.estimatedTimeSavedMinutes > 0 && (
-              <span className="route-saved-pill">
-                ⏱️ Est. {optimizedRoute.estimatedTimeSavedMinutes} min saved
-              </span>
-            )}
+            <div className="route-header-badges">
+              {optimizedRoute.algorithm && (
+                <span className="route-algo-badge">
+                  {optimizedRoute.isGraphRouted ? `⚡ ${optimizedRoute.algorithm.toUpperCase()} Graph` : '📍 Standard Route'}
+                </span>
+              )}
+              {optimizedRoute.estimatedTimeSavedMinutes > 0 && (
+                <span className="route-saved-pill">
+                  ⏱️ Est. {optimizedRoute.estimatedTimeSavedMinutes} min saved
+                </span>
+              )}
+            </div>
           </div>
+          {(optimizedRoute.totalDistanceKm > 0 || optimizedRoute.estimatedDurationMinutes > 0) && (
+            <div className="route-metrics-bar">
+              {optimizedRoute.totalDistanceKm > 0 && <span>📏 <strong>{optimizedRoute.totalDistanceKm}</strong> km</span>}
+              {optimizedRoute.estimatedDurationMinutes > 0 && <span>⏱️ <strong>{optimizedRoute.estimatedDurationMinutes}</strong> min</span>}
+              {optimizedRoute.expandedNodeCount > 0 && <span>🔍 <strong>{optimizedRoute.expandedNodeCount}</strong> nodes explored</span>}
+            </div>
+          )}
           <p className="route-opt-reasoning">{optimizedRoute.reasoning}</p>
           {optimizedRoute.priorityLaneEligible && (
             <div className="route-priority-badge">🚨 Emergency Priority Lane Access Authorized</div>

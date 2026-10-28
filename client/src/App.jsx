@@ -6,6 +6,7 @@ import Layout from './components/Layout.jsx';
 import HomePage from './pages/HomePage.jsx';
 import DispatchesPage from './pages/DispatchesPage.jsx';
 import FacilitiesPage from './pages/FacilitiesPage.jsx';
+import BenchmarkPage from './pages/BenchmarkPage.jsx';
 import AdminApprovalsPage from './pages/AdminApprovalsPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
@@ -39,6 +40,14 @@ export function App() {
               element={
                 <ProtectedRoute>
                   <FacilitiesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="benchmarks"
+              element={
+                <ProtectedRoute>
+                  <BenchmarkPage />
                 </ProtectedRoute>
               }
             />

@@ -101,6 +101,10 @@ const dispatchSchema = new mongoose.Schema(
     },
     symptoms: [{ type: String, trim: true }],
     aiAssessment: aiAssessmentSchema,
+    allocationAudit: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+    },
     notes: {
       type: String,
       trim: true,

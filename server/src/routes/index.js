@@ -8,6 +8,7 @@ import routeRoutes from './routeRoutes.js';
 import aiRoutes from './aiRoutes.js';
 import ambulanceRoutes from './ambulanceRoutes.js';
 import mapRoutes from './mapRoutes.js';
+import simulationRoutes from './simulationRoutes.js';
 
 const apiRouter = Router();
 
@@ -21,5 +22,6 @@ apiRouter.use('/routes', routeRoutes);
 apiRouter.use('/ai', aiRoutes);
 apiRouter.use('/ambulances', ambulanceRoutes);
 apiRouter.use('/map', mapRoutes);
+apiRouter.use('/simulation', simulationRoutes);
 
 export default apiRouter;

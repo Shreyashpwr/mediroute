@@ -1,0 +1,2746 @@
+{
+  "benchmarkTitle": "MediRoute Dispatch & Routing Benchmark: Hospital Network Bed Saturation",
+  "scenarioId": "hospital_surge",
+  "scenarioName": "Hospital Network Bed Saturation",
+  "scenarioDescription": "High initial occupancy and diversion status testing capacity-aware multi-criteria matching.",
+  "seed": 42,
+  "durationMinutes": 120,
+  "totalIncidents": 20,
+  "timestamp": "2026-10-27T21:24:13.651Z",
+  "isSimulatedData": true,
+  "simulationNotice": "ALL DATA IN THIS BENCHMARK IS SYNTHETICALLY GENERATED FOR ALGORITHM COMPARISON",
+  "comparison": {
+    "meanResponseTimeDeltaVsNearestMinutes": 1.319,
+    "meanResponseTimeDeltaVsDijkstraMinutes": -1.752,
+    "p95ResponseTimeDeltaVsNearestMinutes": 6.056,
+    "p95ResponseTimeDeltaVsDijkstraMinutes": 3.571,
+    "unservedRateDeltaVsNearest": 0.15,
+    "unservedRateDeltaVsDijkstra": 0.1
+  },
+  "algorithmRuns": {
+    "proposed": {
+      "label": "Proposed Multi-Criteria Allocation + A*",
+      "metrics": {
+        "sampleSize": {
+          "totalIncidents": 20,
+          "completedIncidentCount": 13,
+          "unservedIncidentCount": 7,
+          "responseTimesSampleCount": 13
+        },
+        "performanceMetrics": {
+          "meanResponseTimeMinutes": 14.15,
+          "medianResponseTimeMinutes": 14.12,
+          "p95ResponseTimeMinutes": 28.324,
+          "minResponseTimeMinutes": 3,
+          "maxResponseTimeMinutes": 30.67,
+          "stdDevResponseTimeMinutes": 8.954,
+          "meanTransitTimeMinutes": 14,
+          "meanTotalMissionTimeMinutes": 37.965
+        },
+        "serviceLevelMetrics": {
+          "unservedIncidentRate": 0.35,
+          "completedIncidentRate": 0.65,
+          "routeCorrectness": 1
+        },
+        "utilizationMetrics": {
+          "ambulanceUtilization": 0.4864,
+          "facilityBedUtilization": 0.966
+        },
+        "computationalMetrics": {
+          "decisionCount": 33,
+          "averageAlgorithmComputeTimeMs": 0.941,
+          "medianAlgorithmComputeTimeMs": 0.483,
+          "p95AlgorithmComputeTimeMs": 2.832,
+          "totalComputationTimeMs": 31.05
+        },
+        "meta": {
+          "definitions": {
+            "totalIncidents": {
+              "name": "Total Incidents",
+              "unit": "count",
+              "description": "Total number of synthetic emergency incidents generated in the scenario."
+            },
+            "completedIncidentCount": {
+              "name": "Completed Incidents",
+              "unit": "count",
+              "description": "Number of emergency incidents where an ambulance reached the scene and transported the patient to a hospital."
+            },
+            "unservedIncidentCount": {
+              "name": "Unserved Incidents",
+              "unit": "count",
+              "description": "Number of incidents that could not be served due to resource exhaustion, hospital capacity deficit, or timeout."
+            },
+            "unservedIncidentRate": {
+              "name": "Unserved Incident Rate",
+              "unit": "fraction (0-1)",
+              "description": "Ratio of unserved incidents to total generated incidents (unserved / total). Lower is better."
+            },
+            "meanResponseTimeMinutes": {
+              "name": "Mean Response Time",
+              "unit": "minutes",
+              "description": "Arithmetic mean duration elapsed between incident generation and ambulance arrival at the scene. Lower is better."
+            },
+            "medianResponseTimeMinutes": {
+              "name": "Median Response Time",
+              "unit": "minutes",
+              "description": "50th percentile (P50) duration from incident generation to ambulance arrival at the scene. Lower is better."
+            },
+            "p95ResponseTimeMinutes": {
+              "name": "P95 Response Time",
+              "unit": "minutes",
+              "description": "95th percentile duration from incident generation to ambulance arrival at the scene. Lower is better."
+            },
+            "minResponseTimeMinutes": {
+              "name": "Minimum Response Time",
+              "unit": "minutes",
+              "description": "Fastest recorded response time in the scenario."
+            },
+            "maxResponseTimeMinutes": {
+              "name": "Maximum Response Time",
+              "unit": "minutes",
+              "description": "Slowest recorded response time among completed incidents."
+            },
+            "meanTransitTimeMinutes": {
+              "name": "Mean Hospital Transit Time",
+              "unit": "minutes",
+              "description": "Mean transit time from incident pickup scene to hospital emergency department admission."
+            },
+            "averageAlgorithmComputeTimeMs": {
+              "name": "Algorithm Compute Latency",
+              "unit": "milliseconds",
+              "description": "Average wall-clock computation time per dispatch decision calculation."
+            },
+            "routeCorrectness": {
+              "name": "Route Correctness",
+              "unit": "fraction (0-1)",
+              "description": "Fraction of planned corridors that traversed non-closed roads and successfully connected origin to destination."
+            },
+            "ambulanceUtilization": {
+              "name": "Ambulance Fleet Utilization",
+              "unit": "fraction (0-1)",
+              "description": "Average fraction of total simulation time that ambulances spent active on dispatch missions."
+            },
+            "facilityBedUtilization": {
+              "name": "Hospital Bed Utilization",
+              "unit": "fraction (0-1)",
+              "description": "Average occupancy fraction of receiving hospital emergency bed capacity over the simulation timeline."
+            }
+          },
+          "computedAt": "2026-10-27T21:24:13.622Z",
+          "isSimulatedData": true,
+          "dataNotice": "ALL SIMULATION METRICS DERIVED STRICTLY FROM DETERMINISTIC DISCRETE-EVENT TRACES"
+        }
+      },
+      "eventLogCount": 69,
+      "eventLog": [
+        {
+          "time": 0,
+          "eventType": "SIMULATION_START",
+          "data": {
+            "algorithm": "proposed",
+            "seed": 42,
+            "scenarioId": "hospital_surge",
+            "durationMinutes": 120,
+            "totalIncidentsLoaded": 20,
+            "ambulanceCount": 8,
+            "facilityCount": 5,
+            "isSimulatedData": true
+          }
+        },
+        {
+          "time": 3.45,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0001",
+            "algorithm": "proposed",
+            "success": true,
+            "ambulanceId": "SIM_AMB_104",
+            "facilityId": "SIM_FAC_03",
+            "estimatedResponseMinutes": 5.62,
+            "failureReason": null,
+            "computeTimeMs": 8.371,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 9.07,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0001",
+            "ambulanceId": "SIM_AMB_104",
+            "responseTimeMinutes": 5.62
+          }
+        },
+        {
+          "time": 10.97,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0002",
+            "algorithm": "proposed",
+            "success": true,
+            "ambulanceId": "SIM_AMB_103",
+            "facilityId": "SIM_FAC_02",
+            "estimatedResponseMinutes": 1.1,
+            "failureReason": null,
+            "computeTimeMs": 2.359,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 13.97,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0002",
+            "ambulanceId": "SIM_AMB_103",
+            "responseTimeMinutes": 3
+          }
+        },
+        {
+          "time": 15.32,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0003",
+            "algorithm": "proposed",
+            "success": true,
+            "ambulanceId": "SIM_AMB_101",
+            "facilityId": "SIM_FAC_02",
+            "estimatedResponseMinutes": 3.51,
+            "failureReason": null,
+            "computeTimeMs": 1.464,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 16.48,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0004",
+            "algorithm": "proposed",
+            "success": true,
+            "ambulanceId": "SIM_AMB_102",
+            "facilityId": "SIM_FAC_02",
+            "estimatedResponseMinutes": 4.85,
+            "failureReason": null,
+            "computeTimeMs": 1.265,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 18.83,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0003",
+            "ambulanceId": "SIM_AMB_101",
+            "responseTimeMinutes": 3.51
+          }
+        },
+        {
+          "time": 18.99,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0005",
+            "algorithm": "proposed",
+            "success": true,
+            "ambulanceId": "SIM_AMB_107",
+            "facilityId": "SIM_FAC_03",
+            "estimatedResponseMinutes": 14.91,
+            "failureReason": null,
+            "computeTimeMs": 3.2,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 21.33,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0004",
+            "ambulanceId": "SIM_AMB_102",
+            "responseTimeMinutes": 4.85
+          }
+        },
+        {
+          "time": 22.04,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0006",
+            "algorithm": "proposed",
+            "success": true,
+            "ambulanceId": "SIM_AMB_108",
+            "facilityId": "SIM_FAC_02",
+            "estimatedResponseMinutes": 26.76,
+            "failureReason": null,
+            "computeTimeMs": 0.872,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 24.7,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0007",
+            "algorithm": "proposed",
+            "success": false,
+            "ambulanceId": null,
+            "facilityId": null,
+            "estimatedResponseMinutes": null,
+            "failureReason": "No feasible ambulance available matching capability 'als_ambulance'. (8 rejected)",
+            "computeTimeMs": 0.438,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 30.07,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0001",
+            "ambulanceId": "SIM_AMB_104",
+            "facilityId": "SIM_FAC_03",
+            "totalMissionDurationMinutes": 26.62,
+            "facilityAvailableBeds": 2
+          }
+        },
+        {
+          "time": 30.07,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0007",
+            "algorithm": "proposed",
+            "success": true,
+            "ambulanceId": "SIM_AMB_104",
+            "facilityId": "SIM_FAC_03",
+            "estimatedResponseMinutes": 16.24,
+            "failureReason": null,
+            "computeTimeMs": 0.982,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 33.9,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0005",
+            "ambulanceId": "SIM_AMB_107",
+            "responseTimeMinutes": 14.91
+          }
+        },
+        {
+          "time": 34.56,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0008",
+            "algorithm": "proposed",
+            "success": false,
+            "ambulanceId": null,
+            "facilityId": null,
+            "estimatedResponseMinutes": null,
+            "failureReason": "No feasible ambulance available matching capability 'als_ambulance'. (8 rejected)",
+            "computeTimeMs": 0.483,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 36.24,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0009",
+            "algorithm": "proposed",
+            "success": true,
+            "ambulanceId": "SIM_AMB_105",
+            "facilityId": "SIM_FAC_02",
+            "estimatedResponseMinutes": 17.11,
+            "failureReason": null,
+            "computeTimeMs": 0.616,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 38.47,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0002",
+            "ambulanceId": "SIM_AMB_103",
+            "facilityId": "SIM_FAC_02",
+            "totalMissionDurationMinutes": 27.5,
+            "facilityAvailableBeds": 4
+          }
+        },
+        {
+          "time": 38.47,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0008",
+            "algorithm": "proposed",
+            "success": false,
+            "ambulanceId": null,
+            "facilityId": null,
+            "estimatedResponseMinutes": null,
+            "failureReason": "No feasible ambulance available matching capability 'als_ambulance'. (8 rejected)",
+            "computeTimeMs": 0.294,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 40.84,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0010",
+            "algorithm": "proposed",
+            "success": false,
+            "ambulanceId": null,
+            "facilityId": null,
+            "estimatedResponseMinutes": null,
+            "failureReason": "No feasible ambulance available matching capability 'als_ambulance'. (8 rejected)",
+            "computeTimeMs": 0.282,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 42.97,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0011",
+            "algorithm": "proposed",
+            "success": true,
+            "ambulanceId": "SIM_AMB_103",
+            "facilityId": "SIM_FAC_01",
+            "estimatedResponseMinutes": 20.33,
+            "failureReason": null,
+            "computeTimeMs": 0.573,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 43.83,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0003",
+            "ambulanceId": "SIM_AMB_101",
+            "facilityId": "SIM_FAC_02",
+            "totalMissionDurationMinutes": 28.51,
+            "facilityAvailableBeds": 3
+          }
+        },
+        {
+          "time": 43.83,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0008",
+            "algorithm": "proposed",
+            "success": true,
+            "ambulanceId": "SIM_AMB_101",
+            "facilityId": "SIM_FAC_02",
+            "estimatedResponseMinutes": 4.85,
+            "failureReason": null,
+            "computeTimeMs": 1.031,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 46.31,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0007",
+            "ambulanceId": "SIM_AMB_104",
+            "responseTimeMinutes": 21.61
+          }
+        },
+        {
+          "time": 48.68,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0008",
+            "ambulanceId": "SIM_AMB_101",
+            "responseTimeMinutes": 14.12
+          }
+        },
+        {
+          "time": 48.8,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0006",
+            "ambulanceId": "SIM_AMB_108",
+            "responseTimeMinutes": 26.76
+          }
+        },
+        {
+          "time": 49.53,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0004",
+            "ambulanceId": "SIM_AMB_102",
+            "facilityId": "SIM_FAC_02",
+            "totalMissionDurationMinutes": 33.05,
+            "facilityAvailableBeds": 2
+          }
+        },
+        {
+          "time": 49.53,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0010",
+            "algorithm": "proposed",
+            "success": true,
+            "ambulanceId": "SIM_AMB_102",
+            "facilityId": "SIM_FAC_03",
+            "estimatedResponseMinutes": 21.98,
+            "failureReason": null,
+            "computeTimeMs": 0.52,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 49.92,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0012",
+            "algorithm": "proposed",
+            "success": false,
+            "ambulanceId": null,
+            "facilityId": null,
+            "estimatedResponseMinutes": null,
+            "failureReason": "No feasible ambulance available matching capability 'bls_ambulance'. (8 rejected)",
+            "computeTimeMs": 0.563,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 53.2,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0005",
+            "ambulanceId": "SIM_AMB_107",
+            "facilityId": "SIM_FAC_03",
+            "totalMissionDurationMinutes": 34.21,
+            "facilityAvailableBeds": 1
+          }
+        },
+        {
+          "time": 53.2,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0012",
+            "algorithm": "proposed",
+            "success": true,
+            "ambulanceId": "SIM_AMB_107",
+            "facilityId": "SIM_FAC_03",
+            "estimatedResponseMinutes": 9.29,
+            "failureReason": null,
+            "computeTimeMs": 0.593,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 53.35,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0009",
+            "ambulanceId": "SIM_AMB_105",
+            "responseTimeMinutes": 17.11
+          }
+        },
+        {
+          "time": 54.39,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0013",
+            "algorithm": "proposed",
+            "success": false,
+            "ambulanceId": null,
+            "facilityId": null,
+            "estimatedResponseMinutes": null,
+            "failureReason": "No feasible ambulance available matching capability 'als_ambulance'. (8 rejected)",
+            "computeTimeMs": 0.181,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 62.49,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0012",
+            "ambulanceId": "SIM_AMB_107",
+            "responseTimeMinutes": 12.57
+          }
+        },
+        {
+          "time": 63.3,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0011",
+            "ambulanceId": "SIM_AMB_103",
+            "responseTimeMinutes": 20.33
+          }
+        },
+        {
+          "time": 67.9,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0014",
+            "algorithm": "proposed",
+            "success": false,
+            "ambulanceId": null,
+            "facilityId": null,
+            "estimatedResponseMinutes": null,
+            "failureReason": "No feasible ambulance available matching capability 'mobile_icu'. (8 rejected)",
+            "computeTimeMs": 0.354,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 69.44,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0015",
+            "algorithm": "proposed",
+            "success": false,
+            "ambulanceId": null,
+            "facilityId": null,
+            "estimatedResponseMinutes": null,
+            "failureReason": "No feasible ambulance available matching capability 'als_ambulance'. (8 rejected)",
+            "computeTimeMs": 0.16,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 70.1,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0006",
+            "ambulanceId": "SIM_AMB_108",
+            "facilityId": "SIM_FAC_02",
+            "totalMissionDurationMinutes": 48.06,
+            "facilityAvailableBeds": 1
+          }
+        },
+        {
+          "time": 70.1,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0013",
+            "algorithm": "proposed",
+            "success": true,
+            "ambulanceId": "SIM_AMB_108",
+            "facilityId": "SIM_FAC_03",
+            "estimatedResponseMinutes": 43.51,
+            "failureReason": null,
+            "computeTimeMs": 0.283,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 70.91,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0007",
+            "ambulanceId": "SIM_AMB_104",
+            "facilityId": "SIM_FAC_03",
+            "totalMissionDurationMinutes": 46.21,
+            "facilityAvailableBeds": 0
+          }
+        },
+        {
+          "time": 70.91,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0014",
+            "algorithm": "proposed",
+            "success": false,
+            "ambulanceId": null,
+            "facilityId": null,
+            "estimatedResponseMinutes": null,
+            "failureReason": "No feasible ambulance available matching capability 'mobile_icu'. (8 rejected)",
+            "computeTimeMs": 0.191,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 71.51,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0010",
+            "ambulanceId": "SIM_AMB_102",
+            "responseTimeMinutes": 30.67
+          }
+        },
+        {
+          "time": 73.85,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0009",
+            "ambulanceId": "SIM_AMB_105",
+            "facilityId": "SIM_FAC_02",
+            "totalMissionDurationMinutes": 37.61,
+            "facilityAvailableBeds": 0
+          }
+        },
+        {
+          "time": 73.85,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0015",
+            "algorithm": "proposed",
+            "success": false,
+            "ambulanceId": null,
+            "facilityId": null,
+            "estimatedResponseMinutes": null,
+            "failureReason": "No feasible receiving hospital available with required capacity / department 'trauma'. (5 rejected)",
+            "computeTimeMs": 0.158,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 76.91,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0016",
+            "algorithm": "proposed",
+            "success": true,
+            "ambulanceId": "SIM_AMB_105",
+            "facilityId": "SIM_FAC_01",
+            "estimatedResponseMinutes": 39.77,
+            "failureReason": null,
+            "computeTimeMs": 0.596,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 80.18,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0008",
+            "ambulanceId": "SIM_AMB_101",
+            "facilityId": "SIM_FAC_02",
+            "totalMissionDurationMinutes": 45.62,
+            "facilityAvailableBeds": 0
+          }
+        },
+        {
+          "time": 80.18,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0014",
+            "algorithm": "proposed",
+            "success": false,
+            "ambulanceId": null,
+            "facilityId": null,
+            "estimatedResponseMinutes": null,
+            "failureReason": "No feasible ambulance available matching capability 'mobile_icu'. (8 rejected)",
+            "computeTimeMs": 2.586,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 80.38,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0017",
+            "algorithm": "proposed",
+            "success": true,
+            "ambulanceId": "SIM_AMB_101",
+            "facilityId": "SIM_FAC_03",
+            "estimatedResponseMinutes": 8.89,
+            "failureReason": null,
+            "computeTimeMs": 0.379,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 81.92,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0018",
+            "algorithm": "proposed",
+            "success": false,
+            "ambulanceId": null,
+            "facilityId": null,
+            "estimatedResponseMinutes": null,
+            "failureReason": "No feasible receiving hospital available with required capacity / department 'trauma'. (5 rejected)",
+            "computeTimeMs": 0.212,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 85.01,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0019",
+            "algorithm": "proposed",
+            "success": false,
+            "ambulanceId": null,
+            "facilityId": null,
+            "estimatedResponseMinutes": null,
+            "failureReason": "No feasible receiving hospital available with required capacity / department 'trauma'. (5 rejected)",
+            "computeTimeMs": 0.252,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 85.09,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0012",
+            "ambulanceId": "SIM_AMB_107",
+            "facilityId": "SIM_FAC_03",
+            "totalMissionDurationMinutes": 35.17,
+            "facilityAvailableBeds": 0
+          }
+        },
+        {
+          "time": 85.09,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0015",
+            "algorithm": "proposed",
+            "success": false,
+            "ambulanceId": null,
+            "facilityId": null,
+            "estimatedResponseMinutes": null,
+            "failureReason": "No feasible receiving hospital available with required capacity / department 'trauma'. (5 rejected)",
+            "computeTimeMs": 0.237,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 85.2,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0011",
+            "ambulanceId": "SIM_AMB_103",
+            "facilityId": "SIM_FAC_01",
+            "totalMissionDurationMinutes": 42.23,
+            "facilityAvailableBeds": 3
+          }
+        },
+        {
+          "time": 85.2,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0014",
+            "algorithm": "proposed",
+            "success": false,
+            "ambulanceId": null,
+            "facilityId": null,
+            "estimatedResponseMinutes": null,
+            "failureReason": "No feasible ambulance available matching capability 'mobile_icu'. (8 rejected)",
+            "computeTimeMs": 0.157,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 89.27,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0017",
+            "ambulanceId": "SIM_AMB_101",
+            "responseTimeMinutes": 8.89
+          }
+        },
+        {
+          "time": 93.48,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0020",
+            "algorithm": "proposed",
+            "success": false,
+            "ambulanceId": null,
+            "facilityId": null,
+            "estimatedResponseMinutes": null,
+            "failureReason": "No feasible ambulance available matching capability 'mobile_icu'. (8 rejected)",
+            "computeTimeMs": 0.101,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 96.51,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0010",
+            "ambulanceId": "SIM_AMB_102",
+            "facilityId": "SIM_FAC_03",
+            "totalMissionDurationMinutes": 55.67,
+            "facilityAvailableBeds": 0
+          }
+        },
+        {
+          "time": 96.51,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0018",
+            "algorithm": "proposed",
+            "success": false,
+            "ambulanceId": null,
+            "facilityId": null,
+            "estimatedResponseMinutes": null,
+            "failureReason": "No feasible receiving hospital available with required capacity / department 'trauma'. (5 rejected)",
+            "computeTimeMs": 0.354,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 113.47,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0017",
+            "ambulanceId": "SIM_AMB_101",
+            "facilityId": "SIM_FAC_03",
+            "totalMissionDurationMinutes": 33.09,
+            "facilityAvailableBeds": 0
+          }
+        },
+        {
+          "time": 113.47,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0019",
+            "algorithm": "proposed",
+            "success": false,
+            "ambulanceId": null,
+            "facilityId": null,
+            "estimatedResponseMinutes": null,
+            "failureReason": "No feasible receiving hospital available with required capacity / department 'trauma'. (5 rejected)",
+            "computeTimeMs": 0.941,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 113.61,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0013",
+            "ambulanceId": "SIM_AMB_108",
+            "responseTimeMinutes": 59.22
+          }
+        },
+        {
+          "time": 116.68,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0016",
+            "ambulanceId": "SIM_AMB_105",
+            "responseTimeMinutes": 39.77
+          }
+        },
+        {
+          "time": 120,
+          "eventType": "INCIDENT_UNSERVED",
+          "data": {
+            "incidentId": "INC-SIM-42-0013",
+            "reason": "Simulation timeline ended before hospital admission could be completed"
+          }
+        },
+        {
+          "time": 120,
+          "eventType": "INCIDENT_UNSERVED",
+          "data": {
+            "incidentId": "INC-SIM-42-0014",
+            "reason": "Simulation timeline ended before hospital admission could be completed"
+          }
+        },
+        {
+          "time": 120,
+          "eventType": "INCIDENT_UNSERVED",
+          "data": {
+            "incidentId": "INC-SIM-42-0015",
+            "reason": "Simulation timeline ended before hospital admission could be completed"
+          }
+        },
+        {
+          "time": 120,
+          "eventType": "INCIDENT_UNSERVED",
+          "data": {
+            "incidentId": "INC-SIM-42-0016",
+            "reason": "Simulation timeline ended before hospital admission could be completed"
+          }
+        },
+        {
+          "time": 120,
+          "eventType": "INCIDENT_UNSERVED",
+          "data": {
+            "incidentId": "INC-SIM-42-0018",
+            "reason": "Simulation timeline ended before hospital admission could be completed"
+          }
+        },
+        {
+          "time": 120,
+          "eventType": "INCIDENT_UNSERVED",
+          "data": {
+            "incidentId": "INC-SIM-42-0019",
+            "reason": "Simulation timeline ended before hospital admission could be completed"
+          }
+        },
+        {
+          "time": 120,
+          "eventType": "INCIDENT_UNSERVED",
+          "data": {
+            "incidentId": "INC-SIM-42-0020",
+            "reason": "Simulation timeline ended before hospital admission could be completed"
+          }
+        }
+      ]
+    },
+    "nearest_available": {
+      "label": "Nearest Available Ambulance Baseline",
+      "metrics": {
+        "sampleSize": {
+          "totalIncidents": 20,
+          "completedIncidentCount": 16,
+          "unservedIncidentCount": 4,
+          "responseTimesSampleCount": 16
+        },
+        "performanceMetrics": {
+          "meanResponseTimeMinutes": 12.831,
+          "medianResponseTimeMinutes": 14.91,
+          "p95ResponseTimeMinutes": 22.268,
+          "minResponseTimeMinutes": 3,
+          "maxResponseTimeMinutes": 28.56,
+          "stdDevResponseTimeMinutes": 7.381,
+          "meanTransitTimeMinutes": 14,
+          "meanTotalMissionTimeMinutes": 36.999
+        },
+        "serviceLevelMetrics": {
+          "unservedIncidentRate": 0.2,
+          "completedIncidentRate": 0.8,
+          "routeCorrectness": 1
+        },
+        "utilizationMetrics": {
+          "ambulanceUtilization": 0.6163,
+          "facilityBedUtilization": 0.99
+        },
+        "computationalMetrics": {
+          "decisionCount": 24,
+          "averageAlgorithmComputeTimeMs": 0.01,
+          "medianAlgorithmComputeTimeMs": 0.005,
+          "p95AlgorithmComputeTimeMs": 0.035,
+          "totalComputationTimeMs": 0.24
+        },
+        "meta": {
+          "definitions": {
+            "totalIncidents": {
+              "name": "Total Incidents",
+              "unit": "count",
+              "description": "Total number of synthetic emergency incidents generated in the scenario."
+            },
+            "completedIncidentCount": {
+              "name": "Completed Incidents",
+              "unit": "count",
+              "description": "Number of emergency incidents where an ambulance reached the scene and transported the patient to a hospital."
+            },
+            "unservedIncidentCount": {
+              "name": "Unserved Incidents",
+              "unit": "count",
+              "description": "Number of incidents that could not be served due to resource exhaustion, hospital capacity deficit, or timeout."
+            },
+            "unservedIncidentRate": {
+              "name": "Unserved Incident Rate",
+              "unit": "fraction (0-1)",
+              "description": "Ratio of unserved incidents to total generated incidents (unserved / total). Lower is better."
+            },
+            "meanResponseTimeMinutes": {
+              "name": "Mean Response Time",
+              "unit": "minutes",
+              "description": "Arithmetic mean duration elapsed between incident generation and ambulance arrival at the scene. Lower is better."
+            },
+            "medianResponseTimeMinutes": {
+              "name": "Median Response Time",
+              "unit": "minutes",
+              "description": "50th percentile (P50) duration from incident generation to ambulance arrival at the scene. Lower is better."
+            },
+            "p95ResponseTimeMinutes": {
+              "name": "P95 Response Time",
+              "unit": "minutes",
+              "description": "95th percentile duration from incident generation to ambulance arrival at the scene. Lower is better."
+            },
+            "minResponseTimeMinutes": {
+              "name": "Minimum Response Time",
+              "unit": "minutes",
+              "description": "Fastest recorded response time in the scenario."
+            },
+            "maxResponseTimeMinutes": {
+              "name": "Maximum Response Time",
+              "unit": "minutes",
+              "description": "Slowest recorded response time among completed incidents."
+            },
+            "meanTransitTimeMinutes": {
+              "name": "Mean Hospital Transit Time",
+              "unit": "minutes",
+              "description": "Mean transit time from incident pickup scene to hospital emergency department admission."
+            },
+            "averageAlgorithmComputeTimeMs": {
+              "name": "Algorithm Compute Latency",
+              "unit": "milliseconds",
+              "description": "Average wall-clock computation time per dispatch decision calculation."
+            },
+            "routeCorrectness": {
+              "name": "Route Correctness",
+              "unit": "fraction (0-1)",
+              "description": "Fraction of planned corridors that traversed non-closed roads and successfully connected origin to destination."
+            },
+            "ambulanceUtilization": {
+              "name": "Ambulance Fleet Utilization",
+              "unit": "fraction (0-1)",
+              "description": "Average fraction of total simulation time that ambulances spent active on dispatch missions."
+            },
+            "facilityBedUtilization": {
+              "name": "Hospital Bed Utilization",
+              "unit": "fraction (0-1)",
+              "description": "Average occupancy fraction of receiving hospital emergency bed capacity over the simulation timeline."
+            }
+          },
+          "computedAt": "2026-10-27T21:24:13.630Z",
+          "isSimulatedData": true,
+          "dataNotice": "ALL SIMULATION METRICS DERIVED STRICTLY FROM DETERMINISTIC DISCRETE-EVENT TRACES"
+        }
+      },
+      "eventLogCount": 63,
+      "eventLog": [
+        {
+          "time": 0,
+          "eventType": "SIMULATION_START",
+          "data": {
+            "algorithm": "nearest_available",
+            "seed": 42,
+            "scenarioId": "hospital_surge",
+            "durationMinutes": 120,
+            "totalIncidentsLoaded": 20,
+            "ambulanceCount": 8,
+            "facilityCount": 5,
+            "isSimulatedData": true
+          }
+        },
+        {
+          "time": 3.45,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0001",
+            "algorithm": "nearest_available",
+            "success": true,
+            "ambulanceId": "SIM_AMB_104",
+            "facilityId": "SIM_FAC_05",
+            "estimatedResponseMinutes": 5.62,
+            "failureReason": null,
+            "computeTimeMs": 0.037,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 9.07,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0001",
+            "ambulanceId": "SIM_AMB_104",
+            "responseTimeMinutes": 5.62
+          }
+        },
+        {
+          "time": 10.97,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0002",
+            "algorithm": "nearest_available",
+            "success": true,
+            "ambulanceId": "SIM_AMB_103",
+            "facilityId": "SIM_FAC_04",
+            "estimatedResponseMinutes": 1.1382968763288288,
+            "failureReason": null,
+            "computeTimeMs": 0.022,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 13.97,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0002",
+            "ambulanceId": "SIM_AMB_103",
+            "responseTimeMinutes": 3
+          }
+        },
+        {
+          "time": 15.32,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0003",
+            "algorithm": "nearest_available",
+            "success": true,
+            "ambulanceId": "SIM_AMB_102",
+            "facilityId": "SIM_FAC_02",
+            "estimatedResponseMinutes": 1.34,
+            "failureReason": null,
+            "computeTimeMs": 0.014,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 16.48,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0004",
+            "algorithm": "nearest_available",
+            "success": true,
+            "ambulanceId": "SIM_AMB_101",
+            "facilityId": "SIM_FAC_01",
+            "estimatedResponseMinutes": 2.778494676227006,
+            "failureReason": null,
+            "computeTimeMs": 0.012,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 18.32,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0003",
+            "ambulanceId": "SIM_AMB_102",
+            "responseTimeMinutes": 3
+          }
+        },
+        {
+          "time": 18.99,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0005",
+            "algorithm": "nearest_available",
+            "success": true,
+            "ambulanceId": "SIM_AMB_107",
+            "facilityId": "SIM_FAC_05",
+            "estimatedResponseMinutes": 14.91,
+            "failureReason": null,
+            "computeTimeMs": 0.026,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 19.48,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0004",
+            "ambulanceId": "SIM_AMB_101",
+            "responseTimeMinutes": 3
+          }
+        },
+        {
+          "time": 22.04,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0006",
+            "algorithm": "nearest_available",
+            "success": true,
+            "ambulanceId": "SIM_AMB_106",
+            "facilityId": "SIM_FAC_04",
+            "estimatedResponseMinutes": 15.06,
+            "failureReason": null,
+            "computeTimeMs": 0.004,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 24.7,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0007",
+            "algorithm": "nearest_available",
+            "success": true,
+            "ambulanceId": "SIM_AMB_105",
+            "facilityId": "SIM_FAC_03",
+            "estimatedResponseMinutes": 1.023290673391809,
+            "failureReason": null,
+            "computeTimeMs": 0.002,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 27.7,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0007",
+            "ambulanceId": "SIM_AMB_105",
+            "responseTimeMinutes": 3
+          }
+        },
+        {
+          "time": 30.07,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0001",
+            "ambulanceId": "SIM_AMB_104",
+            "facilityId": "SIM_FAC_05",
+            "totalMissionDurationMinutes": 26.62,
+            "facilityAvailableBeds": 0
+          }
+        },
+        {
+          "time": 33.9,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0005",
+            "ambulanceId": "SIM_AMB_107",
+            "responseTimeMinutes": 14.91
+          }
+        },
+        {
+          "time": 34.56,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0008",
+            "algorithm": "nearest_available",
+            "success": true,
+            "ambulanceId": "SIM_AMB_108",
+            "facilityId": "SIM_FAC_02",
+            "estimatedResponseMinutes": 20.17,
+            "failureReason": null,
+            "computeTimeMs": 0.002,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 36.24,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0009",
+            "algorithm": "nearest_available",
+            "success": true,
+            "ambulanceId": "SIM_AMB_104",
+            "facilityId": "SIM_FAC_01",
+            "estimatedResponseMinutes": 14.91,
+            "failureReason": null,
+            "computeTimeMs": 0.003,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 37.1,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0006",
+            "ambulanceId": "SIM_AMB_106",
+            "responseTimeMinutes": 15.06
+          }
+        },
+        {
+          "time": 38.47,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0002",
+            "ambulanceId": "SIM_AMB_103",
+            "facilityId": "SIM_FAC_04",
+            "totalMissionDurationMinutes": 27.5,
+            "facilityAvailableBeds": 1
+          }
+        },
+        {
+          "time": 40.84,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0010",
+            "algorithm": "nearest_available",
+            "success": true,
+            "ambulanceId": "SIM_AMB_103",
+            "facilityId": "SIM_FAC_03",
+            "estimatedResponseMinutes": 28.56,
+            "failureReason": null,
+            "computeTimeMs": 0.003,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 42.97,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0011",
+            "algorithm": "nearest_available",
+            "success": false,
+            "ambulanceId": null,
+            "facilityId": null,
+            "estimatedResponseMinutes": null,
+            "failureReason": "No ambulances in available status",
+            "computeTimeMs": 0.013,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 43.32,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0003",
+            "ambulanceId": "SIM_AMB_102",
+            "facilityId": "SIM_FAC_02",
+            "totalMissionDurationMinutes": 28,
+            "facilityAvailableBeds": 4
+          }
+        },
+        {
+          "time": 43.32,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0011",
+            "algorithm": "nearest_available",
+            "success": true,
+            "ambulanceId": "SIM_AMB_102",
+            "facilityId": "SIM_FAC_01",
+            "estimatedResponseMinutes": 13.74,
+            "failureReason": null,
+            "computeTimeMs": 0.002,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 47.68,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0004",
+            "ambulanceId": "SIM_AMB_101",
+            "facilityId": "SIM_FAC_01",
+            "totalMissionDurationMinutes": 31.2,
+            "facilityAvailableBeds": 3
+          }
+        },
+        {
+          "time": 49.92,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0012",
+            "algorithm": "nearest_available",
+            "success": true,
+            "ambulanceId": "SIM_AMB_101",
+            "facilityId": "SIM_FAC_03",
+            "estimatedResponseMinutes": 16.81,
+            "failureReason": null,
+            "computeTimeMs": 0.002,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 51.15,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0009",
+            "ambulanceId": "SIM_AMB_104",
+            "responseTimeMinutes": 14.91
+          }
+        },
+        {
+          "time": 52.3,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0007",
+            "ambulanceId": "SIM_AMB_105",
+            "facilityId": "SIM_FAC_03",
+            "totalMissionDurationMinutes": 27.6,
+            "facilityAvailableBeds": 2
+          }
+        },
+        {
+          "time": 53.2,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0005",
+            "ambulanceId": "SIM_AMB_107",
+            "facilityId": "SIM_FAC_05",
+            "totalMissionDurationMinutes": 34.21,
+            "facilityAvailableBeds": 0
+          }
+        },
+        {
+          "time": 54.39,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0013",
+            "algorithm": "nearest_available",
+            "success": true,
+            "ambulanceId": "SIM_AMB_107",
+            "facilityId": "SIM_FAC_03",
+            "estimatedResponseMinutes": 14.91,
+            "failureReason": null,
+            "computeTimeMs": 0.005,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 54.73,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0008",
+            "ambulanceId": "SIM_AMB_108",
+            "responseTimeMinutes": 20.17
+          }
+        },
+        {
+          "time": 57.06,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0011",
+            "ambulanceId": "SIM_AMB_102",
+            "responseTimeMinutes": 14.09
+          }
+        },
+        {
+          "time": 58.4,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0006",
+            "ambulanceId": "SIM_AMB_106",
+            "facilityId": "SIM_FAC_04",
+            "totalMissionDurationMinutes": 36.36,
+            "facilityAvailableBeds": 0
+          }
+        },
+        {
+          "time": 66.73,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0012",
+            "ambulanceId": "SIM_AMB_101",
+            "responseTimeMinutes": 16.81
+          }
+        },
+        {
+          "time": 67.9,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0014",
+            "algorithm": "nearest_available",
+            "success": true,
+            "ambulanceId": "SIM_AMB_105",
+            "facilityId": "SIM_FAC_03",
+            "estimatedResponseMinutes": 16.24,
+            "failureReason": null,
+            "computeTimeMs": 0.01,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 69.3,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0013",
+            "ambulanceId": "SIM_AMB_107",
+            "responseTimeMinutes": 14.91
+          }
+        },
+        {
+          "time": 69.4,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0010",
+            "ambulanceId": "SIM_AMB_103",
+            "responseTimeMinutes": 28.56
+          }
+        },
+        {
+          "time": 69.44,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0015",
+            "algorithm": "nearest_available",
+            "success": true,
+            "ambulanceId": "SIM_AMB_106",
+            "facilityId": "SIM_FAC_01",
+            "estimatedResponseMinutes": 18.27,
+            "failureReason": null,
+            "computeTimeMs": 0.007,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 71.65,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0009",
+            "ambulanceId": "SIM_AMB_104",
+            "facilityId": "SIM_FAC_01",
+            "totalMissionDurationMinutes": 35.41,
+            "facilityAvailableBeds": 2
+          }
+        },
+        {
+          "time": 76.91,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0016",
+            "algorithm": "nearest_available",
+            "success": true,
+            "ambulanceId": "SIM_AMB_104",
+            "facilityId": "SIM_FAC_01",
+            "estimatedResponseMinutes": 43.51,
+            "failureReason": null,
+            "computeTimeMs": 0.008,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 78.96,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0011",
+            "ambulanceId": "SIM_AMB_102",
+            "facilityId": "SIM_FAC_01",
+            "totalMissionDurationMinutes": 35.99,
+            "facilityAvailableBeds": 1
+          }
+        },
+        {
+          "time": 80.38,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0017",
+            "algorithm": "nearest_available",
+            "success": true,
+            "ambulanceId": "SIM_AMB_102",
+            "facilityId": "SIM_FAC_01",
+            "estimatedResponseMinutes": 13.74,
+            "failureReason": null,
+            "computeTimeMs": 0.005,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 81.92,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0018",
+            "algorithm": "nearest_available",
+            "success": false,
+            "ambulanceId": null,
+            "facilityId": null,
+            "estimatedResponseMinutes": null,
+            "failureReason": "No ambulances in available status",
+            "computeTimeMs": 0.047,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 84.14,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0014",
+            "ambulanceId": "SIM_AMB_105",
+            "responseTimeMinutes": 16.24
+          }
+        },
+        {
+          "time": 85.01,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0019",
+            "algorithm": "nearest_available",
+            "success": false,
+            "ambulanceId": null,
+            "facilityId": null,
+            "estimatedResponseMinutes": null,
+            "failureReason": "No ambulances in available status",
+            "computeTimeMs": 0.002,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 86.23,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0008",
+            "ambulanceId": "SIM_AMB_108",
+            "facilityId": "SIM_FAC_02",
+            "totalMissionDurationMinutes": 51.67,
+            "facilityAvailableBeds": 3
+          }
+        },
+        {
+          "time": 86.23,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0018",
+            "algorithm": "nearest_available",
+            "success": true,
+            "ambulanceId": "SIM_AMB_108",
+            "facilityId": "SIM_FAC_03",
+            "estimatedResponseMinutes": 35.44,
+            "failureReason": null,
+            "computeTimeMs": 0.003,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 87.71,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0015",
+            "ambulanceId": "SIM_AMB_106",
+            "responseTimeMinutes": 18.27
+          }
+        },
+        {
+          "time": 89.33,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0012",
+            "ambulanceId": "SIM_AMB_101",
+            "facilityId": "SIM_FAC_03",
+            "totalMissionDurationMinutes": 39.41,
+            "facilityAvailableBeds": 1
+          }
+        },
+        {
+          "time": 89.33,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0019",
+            "algorithm": "nearest_available",
+            "success": true,
+            "ambulanceId": "SIM_AMB_101",
+            "facilityId": "SIM_FAC_03",
+            "estimatedResponseMinutes": 21.46,
+            "failureReason": null,
+            "computeTimeMs": 0.004,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 93.48,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0020",
+            "algorithm": "nearest_available",
+            "success": false,
+            "ambulanceId": null,
+            "facilityId": null,
+            "estimatedResponseMinutes": null,
+            "failureReason": "No ambulances in available status",
+            "computeTimeMs": 0.002,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 94,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0013",
+            "ambulanceId": "SIM_AMB_107",
+            "facilityId": "SIM_FAC_03",
+            "totalMissionDurationMinutes": 39.61,
+            "facilityAvailableBeds": 0
+          }
+        },
+        {
+          "time": 94,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0020",
+            "algorithm": "nearest_available",
+            "success": true,
+            "ambulanceId": "SIM_AMB_107",
+            "facilityId": "SIM_FAC_05",
+            "estimatedResponseMinutes": 9.29,
+            "failureReason": null,
+            "computeTimeMs": 0.003,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 94.12,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0017",
+            "ambulanceId": "SIM_AMB_102",
+            "responseTimeMinutes": 13.74
+          }
+        },
+        {
+          "time": 94.4,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0010",
+            "ambulanceId": "SIM_AMB_103",
+            "facilityId": "SIM_FAC_03",
+            "totalMissionDurationMinutes": 53.56,
+            "facilityAvailableBeds": 0
+          }
+        },
+        {
+          "time": 103.29,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0020",
+            "ambulanceId": "SIM_AMB_107",
+            "responseTimeMinutes": 9.81
+          }
+        },
+        {
+          "time": 109.94,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0014",
+            "ambulanceId": "SIM_AMB_105",
+            "facilityId": "SIM_FAC_03",
+            "totalMissionDurationMinutes": 42.04,
+            "facilityAvailableBeds": 0
+          }
+        },
+        {
+          "time": 110.79,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0019",
+            "ambulanceId": "SIM_AMB_101",
+            "responseTimeMinutes": 25.78
+          }
+        },
+        {
+          "time": 114.31,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0015",
+            "ambulanceId": "SIM_AMB_106",
+            "facilityId": "SIM_FAC_01",
+            "totalMissionDurationMinutes": 44.87,
+            "facilityAvailableBeds": 0
+          }
+        },
+        {
+          "time": 118.32,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0017",
+            "ambulanceId": "SIM_AMB_102",
+            "facilityId": "SIM_FAC_01",
+            "totalMissionDurationMinutes": 37.94,
+            "facilityAvailableBeds": 0
+          }
+        },
+        {
+          "time": 120,
+          "eventType": "INCIDENT_UNSERVED",
+          "data": {
+            "incidentId": "INC-SIM-42-0016",
+            "reason": "Simulation timeline ended before hospital admission could be completed"
+          }
+        },
+        {
+          "time": 120,
+          "eventType": "INCIDENT_UNSERVED",
+          "data": {
+            "incidentId": "INC-SIM-42-0018",
+            "reason": "Simulation timeline ended before hospital admission could be completed"
+          }
+        },
+        {
+          "time": 120,
+          "eventType": "INCIDENT_UNSERVED",
+          "data": {
+            "incidentId": "INC-SIM-42-0019",
+            "reason": "Simulation timeline ended before hospital admission could be completed"
+          }
+        },
+        {
+          "time": 120,
+          "eventType": "INCIDENT_UNSERVED",
+          "data": {
+            "incidentId": "INC-SIM-42-0020",
+            "reason": "Simulation timeline ended before hospital admission could be completed"
+          }
+        }
+      ]
+    },
+    "shortest_path_dijkstra": {
+      "label": "Shortest-Path Dijkstra Baseline",
+      "metrics": {
+        "sampleSize": {
+          "totalIncidents": 20,
+          "completedIncidentCount": 15,
+          "unservedIncidentCount": 5,
+          "responseTimesSampleCount": 15
+        },
+        "performanceMetrics": {
+          "meanResponseTimeMinutes": 15.902,
+          "medianResponseTimeMinutes": 15.23,
+          "p95ResponseTimeMinutes": 24.753,
+          "minResponseTimeMinutes": 3,
+          "maxResponseTimeMinutes": 24.83,
+          "stdDevResponseTimeMinutes": 6.335,
+          "meanTransitTimeMinutes": 14,
+          "meanTotalMissionTimeMinutes": 40.069
+        },
+        "serviceLevelMetrics": {
+          "unservedIncidentRate": 0.25,
+          "completedIncidentRate": 0.75,
+          "routeCorrectness": 1
+        },
+        "utilizationMetrics": {
+          "ambulanceUtilization": 0.6116,
+          "facilityBedUtilization": 0.99
+        },
+        "computationalMetrics": {
+          "decisionCount": 27,
+          "averageAlgorithmComputeTimeMs": 0.745,
+          "medianAlgorithmComputeTimeMs": 0.441,
+          "p95AlgorithmComputeTimeMs": 2.553,
+          "totalComputationTimeMs": 20.11
+        },
+        "meta": {
+          "definitions": {
+            "totalIncidents": {
+              "name": "Total Incidents",
+              "unit": "count",
+              "description": "Total number of synthetic emergency incidents generated in the scenario."
+            },
+            "completedIncidentCount": {
+              "name": "Completed Incidents",
+              "unit": "count",
+              "description": "Number of emergency incidents where an ambulance reached the scene and transported the patient to a hospital."
+            },
+            "unservedIncidentCount": {
+              "name": "Unserved Incidents",
+              "unit": "count",
+              "description": "Number of incidents that could not be served due to resource exhaustion, hospital capacity deficit, or timeout."
+            },
+            "unservedIncidentRate": {
+              "name": "Unserved Incident Rate",
+              "unit": "fraction (0-1)",
+              "description": "Ratio of unserved incidents to total generated incidents (unserved / total). Lower is better."
+            },
+            "meanResponseTimeMinutes": {
+              "name": "Mean Response Time",
+              "unit": "minutes",
+              "description": "Arithmetic mean duration elapsed between incident generation and ambulance arrival at the scene. Lower is better."
+            },
+            "medianResponseTimeMinutes": {
+              "name": "Median Response Time",
+              "unit": "minutes",
+              "description": "50th percentile (P50) duration from incident generation to ambulance arrival at the scene. Lower is better."
+            },
+            "p95ResponseTimeMinutes": {
+              "name": "P95 Response Time",
+              "unit": "minutes",
+              "description": "95th percentile duration from incident generation to ambulance arrival at the scene. Lower is better."
+            },
+            "minResponseTimeMinutes": {
+              "name": "Minimum Response Time",
+              "unit": "minutes",
+              "description": "Fastest recorded response time in the scenario."
+            },
+            "maxResponseTimeMinutes": {
+              "name": "Maximum Response Time",
+              "unit": "minutes",
+              "description": "Slowest recorded response time among completed incidents."
+            },
+            "meanTransitTimeMinutes": {
+              "name": "Mean Hospital Transit Time",
+              "unit": "minutes",
+              "description": "Mean transit time from incident pickup scene to hospital emergency department admission."
+            },
+            "averageAlgorithmComputeTimeMs": {
+              "name": "Algorithm Compute Latency",
+              "unit": "milliseconds",
+              "description": "Average wall-clock computation time per dispatch decision calculation."
+            },
+            "routeCorrectness": {
+              "name": "Route Correctness",
+              "unit": "fraction (0-1)",
+              "description": "Fraction of planned corridors that traversed non-closed roads and successfully connected origin to destination."
+            },
+            "ambulanceUtilization": {
+              "name": "Ambulance Fleet Utilization",
+              "unit": "fraction (0-1)",
+              "description": "Average fraction of total simulation time that ambulances spent active on dispatch missions."
+            },
+            "facilityBedUtilization": {
+              "name": "Hospital Bed Utilization",
+              "unit": "fraction (0-1)",
+              "description": "Average occupancy fraction of receiving hospital emergency bed capacity over the simulation timeline."
+            }
+          },
+          "computedAt": "2026-10-27T21:24:13.650Z",
+          "isSimulatedData": true,
+          "dataNotice": "ALL SIMULATION METRICS DERIVED STRICTLY FROM DETERMINISTIC DISCRETE-EVENT TRACES"
+        }
+      },
+      "eventLogCount": 66,
+      "eventLog": [
+        {
+          "time": 0,
+          "eventType": "SIMULATION_START",
+          "data": {
+            "algorithm": "shortest_path_dijkstra",
+            "seed": 42,
+            "scenarioId": "hospital_surge",
+            "durationMinutes": 120,
+            "totalIncidentsLoaded": 20,
+            "ambulanceCount": 8,
+            "facilityCount": 5,
+            "isSimulatedData": true
+          }
+        },
+        {
+          "time": 3.45,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0001",
+            "algorithm": "shortest_path_dijkstra",
+            "success": true,
+            "ambulanceId": "SIM_AMB_104",
+            "facilityId": "SIM_FAC_05",
+            "estimatedResponseMinutes": 5.62,
+            "failureReason": null,
+            "computeTimeMs": 2.97,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 9.07,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0001",
+            "ambulanceId": "SIM_AMB_104",
+            "responseTimeMinutes": 5.62
+          }
+        },
+        {
+          "time": 10.97,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0002",
+            "algorithm": "shortest_path_dijkstra",
+            "success": true,
+            "ambulanceId": "SIM_AMB_103",
+            "facilityId": "SIM_FAC_04",
+            "estimatedResponseMinutes": null,
+            "failureReason": null,
+            "computeTimeMs": 3.091,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 15.32,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0003",
+            "algorithm": "shortest_path_dijkstra",
+            "success": true,
+            "ambulanceId": "SIM_AMB_102",
+            "facilityId": "SIM_FAC_02",
+            "estimatedResponseMinutes": 1.34,
+            "failureReason": null,
+            "computeTimeMs": 0.991,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 16.48,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0004",
+            "algorithm": "shortest_path_dijkstra",
+            "success": true,
+            "ambulanceId": "SIM_AMB_101",
+            "facilityId": "SIM_FAC_01",
+            "estimatedResponseMinutes": null,
+            "failureReason": null,
+            "computeTimeMs": 1.527,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 18.32,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0003",
+            "ambulanceId": "SIM_AMB_102",
+            "responseTimeMinutes": 3
+          }
+        },
+        {
+          "time": 18.99,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0005",
+            "algorithm": "shortest_path_dijkstra",
+            "success": true,
+            "ambulanceId": "SIM_AMB_105",
+            "facilityId": "SIM_FAC_05",
+            "estimatedResponseMinutes": 16.24,
+            "failureReason": null,
+            "computeTimeMs": 1.373,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 22.04,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0006",
+            "algorithm": "shortest_path_dijkstra",
+            "success": true,
+            "ambulanceId": "SIM_AMB_106",
+            "facilityId": "SIM_FAC_04",
+            "estimatedResponseMinutes": 15.06,
+            "failureReason": null,
+            "computeTimeMs": 1.219,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 22.97,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0002",
+            "ambulanceId": "SIM_AMB_103",
+            "responseTimeMinutes": 12
+          }
+        },
+        {
+          "time": 24.7,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0007",
+            "algorithm": "shortest_path_dijkstra",
+            "success": true,
+            "ambulanceId": "SIM_AMB_107",
+            "facilityId": "SIM_FAC_03",
+            "estimatedResponseMinutes": 17.11,
+            "failureReason": null,
+            "computeTimeMs": 0.62,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 28.48,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0004",
+            "ambulanceId": "SIM_AMB_101",
+            "responseTimeMinutes": 12
+          }
+        },
+        {
+          "time": 30.07,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0001",
+            "ambulanceId": "SIM_AMB_104",
+            "facilityId": "SIM_FAC_05",
+            "totalMissionDurationMinutes": 26.62,
+            "facilityAvailableBeds": 0
+          }
+        },
+        {
+          "time": 34.56,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0008",
+            "algorithm": "shortest_path_dijkstra",
+            "success": true,
+            "ambulanceId": "SIM_AMB_108",
+            "facilityId": "SIM_FAC_02",
+            "estimatedResponseMinutes": 20.17,
+            "failureReason": null,
+            "computeTimeMs": 0.457,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 35.23,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0005",
+            "ambulanceId": "SIM_AMB_105",
+            "responseTimeMinutes": 16.24
+          }
+        },
+        {
+          "time": 36.24,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0009",
+            "algorithm": "shortest_path_dijkstra",
+            "success": true,
+            "ambulanceId": "SIM_AMB_104",
+            "facilityId": "SIM_FAC_01",
+            "estimatedResponseMinutes": 14.91,
+            "failureReason": null,
+            "computeTimeMs": 0.415,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 37.1,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0006",
+            "ambulanceId": "SIM_AMB_106",
+            "responseTimeMinutes": 15.06
+          }
+        },
+        {
+          "time": 40.84,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0010",
+            "algorithm": "shortest_path_dijkstra",
+            "success": false,
+            "ambulanceId": null,
+            "facilityId": null,
+            "estimatedResponseMinutes": null,
+            "failureReason": "No ambulances available for Dijkstra evaluation",
+            "computeTimeMs": 0.029,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 41.81,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0007",
+            "ambulanceId": "SIM_AMB_107",
+            "responseTimeMinutes": 17.11
+          }
+        },
+        {
+          "time": 42.97,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0011",
+            "algorithm": "shortest_path_dijkstra",
+            "success": false,
+            "ambulanceId": null,
+            "facilityId": null,
+            "estimatedResponseMinutes": null,
+            "failureReason": "No ambulances available for Dijkstra evaluation",
+            "computeTimeMs": 0.004,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 43.32,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0003",
+            "ambulanceId": "SIM_AMB_102",
+            "facilityId": "SIM_FAC_02",
+            "totalMissionDurationMinutes": 28,
+            "facilityAvailableBeds": 4
+          }
+        },
+        {
+          "time": 43.32,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0010",
+            "algorithm": "shortest_path_dijkstra",
+            "success": true,
+            "ambulanceId": "SIM_AMB_102",
+            "facilityId": "SIM_FAC_03",
+            "estimatedResponseMinutes": 21.98,
+            "failureReason": null,
+            "computeTimeMs": 0.441,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 47.47,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0002",
+            "ambulanceId": "SIM_AMB_103",
+            "facilityId": "SIM_FAC_04",
+            "totalMissionDurationMinutes": 36.5,
+            "facilityAvailableBeds": 1
+          }
+        },
+        {
+          "time": 47.47,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0011",
+            "algorithm": "shortest_path_dijkstra",
+            "success": true,
+            "ambulanceId": "SIM_AMB_103",
+            "facilityId": "SIM_FAC_01",
+            "estimatedResponseMinutes": 20.33,
+            "failureReason": null,
+            "computeTimeMs": 0.342,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 49.92,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0012",
+            "algorithm": "shortest_path_dijkstra",
+            "success": false,
+            "ambulanceId": null,
+            "facilityId": null,
+            "estimatedResponseMinutes": null,
+            "failureReason": "No ambulances available for Dijkstra evaluation",
+            "computeTimeMs": 0.002,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 51.15,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0009",
+            "ambulanceId": "SIM_AMB_104",
+            "responseTimeMinutes": 14.91
+          }
+        },
+        {
+          "time": 54.39,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0013",
+            "algorithm": "shortest_path_dijkstra",
+            "success": false,
+            "ambulanceId": null,
+            "facilityId": null,
+            "estimatedResponseMinutes": null,
+            "failureReason": "No ambulances available for Dijkstra evaluation",
+            "computeTimeMs": 0.001,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 54.53,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0005",
+            "ambulanceId": "SIM_AMB_105",
+            "facilityId": "SIM_FAC_05",
+            "totalMissionDurationMinutes": 35.54,
+            "facilityAvailableBeds": 0
+          }
+        },
+        {
+          "time": 54.53,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0012",
+            "algorithm": "shortest_path_dijkstra",
+            "success": true,
+            "ambulanceId": "SIM_AMB_105",
+            "facilityId": "SIM_FAC_03",
+            "estimatedResponseMinutes": 10.62,
+            "failureReason": null,
+            "computeTimeMs": 0.96,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 54.73,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0008",
+            "ambulanceId": "SIM_AMB_108",
+            "responseTimeMinutes": 20.17
+          }
+        },
+        {
+          "time": 56.68,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0004",
+            "ambulanceId": "SIM_AMB_101",
+            "facilityId": "SIM_FAC_01",
+            "totalMissionDurationMinutes": 40.2,
+            "facilityAvailableBeds": 3
+          }
+        },
+        {
+          "time": 56.68,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0013",
+            "algorithm": "shortest_path_dijkstra",
+            "success": true,
+            "ambulanceId": "SIM_AMB_101",
+            "facilityId": "SIM_FAC_03",
+            "estimatedResponseMinutes": 22.43,
+            "failureReason": null,
+            "computeTimeMs": 0.843,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 58.4,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0006",
+            "ambulanceId": "SIM_AMB_106",
+            "facilityId": "SIM_FAC_04",
+            "totalMissionDurationMinutes": 36.36,
+            "facilityAvailableBeds": 0
+          }
+        },
+        {
+          "time": 65.15,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0012",
+            "ambulanceId": "SIM_AMB_105",
+            "responseTimeMinutes": 15.23
+          }
+        },
+        {
+          "time": 65.3,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0010",
+            "ambulanceId": "SIM_AMB_102",
+            "responseTimeMinutes": 24.46
+          }
+        },
+        {
+          "time": 66.41,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0007",
+            "ambulanceId": "SIM_AMB_107",
+            "facilityId": "SIM_FAC_03",
+            "totalMissionDurationMinutes": 41.71,
+            "facilityAvailableBeds": 2
+          }
+        },
+        {
+          "time": 67.8,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0011",
+            "ambulanceId": "SIM_AMB_103",
+            "responseTimeMinutes": 24.83
+          }
+        },
+        {
+          "time": 67.9,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0014",
+            "algorithm": "shortest_path_dijkstra",
+            "success": true,
+            "ambulanceId": "SIM_AMB_107",
+            "facilityId": "SIM_FAC_03",
+            "estimatedResponseMinutes": 14.91,
+            "failureReason": null,
+            "computeTimeMs": 0.612,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 69.44,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0015",
+            "algorithm": "shortest_path_dijkstra",
+            "success": true,
+            "ambulanceId": "SIM_AMB_106",
+            "facilityId": "SIM_FAC_01",
+            "estimatedResponseMinutes": 18.27,
+            "failureReason": null,
+            "computeTimeMs": 0.284,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 71.65,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0009",
+            "ambulanceId": "SIM_AMB_104",
+            "facilityId": "SIM_FAC_01",
+            "totalMissionDurationMinutes": 35.41,
+            "facilityAvailableBeds": 2
+          }
+        },
+        {
+          "time": 76.91,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0016",
+            "algorithm": "shortest_path_dijkstra",
+            "success": true,
+            "ambulanceId": "SIM_AMB_104",
+            "facilityId": "SIM_FAC_02",
+            "estimatedResponseMinutes": 43.51,
+            "failureReason": null,
+            "computeTimeMs": 1.58,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 79.11,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0013",
+            "ambulanceId": "SIM_AMB_101",
+            "responseTimeMinutes": 24.72
+          }
+        },
+        {
+          "time": 80.38,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0017",
+            "algorithm": "shortest_path_dijkstra",
+            "success": false,
+            "ambulanceId": null,
+            "facilityId": null,
+            "estimatedResponseMinutes": null,
+            "failureReason": "No ambulances available for Dijkstra evaluation",
+            "computeTimeMs": 0.001,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 81.92,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0018",
+            "algorithm": "shortest_path_dijkstra",
+            "success": false,
+            "ambulanceId": null,
+            "facilityId": null,
+            "estimatedResponseMinutes": null,
+            "failureReason": "No ambulances available for Dijkstra evaluation",
+            "computeTimeMs": 0.001,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 82.81,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0014",
+            "ambulanceId": "SIM_AMB_107",
+            "responseTimeMinutes": 14.91
+          }
+        },
+        {
+          "time": 85.01,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0019",
+            "algorithm": "shortest_path_dijkstra",
+            "success": false,
+            "ambulanceId": null,
+            "facilityId": null,
+            "estimatedResponseMinutes": null,
+            "failureReason": "No ambulances available for Dijkstra evaluation",
+            "computeTimeMs": 0,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 86.23,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0008",
+            "ambulanceId": "SIM_AMB_108",
+            "facilityId": "SIM_FAC_02",
+            "totalMissionDurationMinutes": 51.67,
+            "facilityAvailableBeds": 3
+          }
+        },
+        {
+          "time": 86.23,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0017",
+            "algorithm": "shortest_path_dijkstra",
+            "success": true,
+            "ambulanceId": "SIM_AMB_108",
+            "facilityId": "SIM_FAC_01",
+            "estimatedResponseMinutes": 29.97,
+            "failureReason": null,
+            "computeTimeMs": 0.327,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 87.71,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0015",
+            "ambulanceId": "SIM_AMB_106",
+            "responseTimeMinutes": 18.27
+          }
+        },
+        {
+          "time": 87.75,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0012",
+            "ambulanceId": "SIM_AMB_105",
+            "facilityId": "SIM_FAC_03",
+            "totalMissionDurationMinutes": 37.83,
+            "facilityAvailableBeds": 1
+          }
+        },
+        {
+          "time": 87.75,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0018",
+            "algorithm": "shortest_path_dijkstra",
+            "success": true,
+            "ambulanceId": "SIM_AMB_105",
+            "facilityId": "SIM_FAC_03",
+            "estimatedResponseMinutes": 4.33,
+            "failureReason": null,
+            "computeTimeMs": 0.35,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 89.7,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0011",
+            "ambulanceId": "SIM_AMB_103",
+            "facilityId": "SIM_FAC_01",
+            "totalMissionDurationMinutes": 46.73,
+            "facilityAvailableBeds": 1
+          }
+        },
+        {
+          "time": 89.7,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0019",
+            "algorithm": "shortest_path_dijkstra",
+            "success": true,
+            "ambulanceId": "SIM_AMB_103",
+            "facilityId": "SIM_FAC_03",
+            "estimatedResponseMinutes": 32.9,
+            "failureReason": null,
+            "computeTimeMs": 0.318,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 90.3,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0010",
+            "ambulanceId": "SIM_AMB_102",
+            "facilityId": "SIM_FAC_03",
+            "totalMissionDurationMinutes": 49.46,
+            "facilityAvailableBeds": 0
+          }
+        },
+        {
+          "time": 92.08,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0018",
+            "ambulanceId": "SIM_AMB_105",
+            "responseTimeMinutes": 10.16
+          }
+        },
+        {
+          "time": 93.48,
+          "eventType": "DISPATCH_DECISION",
+          "data": {
+            "incidentId": "INC-SIM-42-0020",
+            "algorithm": "shortest_path_dijkstra",
+            "success": true,
+            "ambulanceId": "SIM_AMB_102",
+            "facilityId": "SIM_FAC_05",
+            "estimatedResponseMinutes": 21.66,
+            "failureReason": null,
+            "computeTimeMs": 0.353,
+            "isValidRoute": true
+          }
+        },
+        {
+          "time": 103.81,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0013",
+            "ambulanceId": "SIM_AMB_101",
+            "facilityId": "SIM_FAC_03",
+            "totalMissionDurationMinutes": 49.42,
+            "facilityAvailableBeds": 0
+          }
+        },
+        {
+          "time": 108.61,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0014",
+            "ambulanceId": "SIM_AMB_107",
+            "facilityId": "SIM_FAC_03",
+            "totalMissionDurationMinutes": 40.71,
+            "facilityAvailableBeds": 0
+          }
+        },
+        {
+          "time": 114.31,
+          "eventType": "PATIENT_ADMITTED",
+          "data": {
+            "incidentId": "INC-SIM-42-0015",
+            "ambulanceId": "SIM_AMB_106",
+            "facilityId": "SIM_FAC_01",
+            "totalMissionDurationMinutes": 44.87,
+            "facilityAvailableBeds": 0
+          }
+        },
+        {
+          "time": 115.14,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0020",
+            "ambulanceId": "SIM_AMB_102",
+            "responseTimeMinutes": 21.66
+          }
+        },
+        {
+          "time": 116.2,
+          "eventType": "AMBULANCE_ARRIVED_SCENE",
+          "data": {
+            "incidentId": "INC-SIM-42-0017",
+            "ambulanceId": "SIM_AMB_108",
+            "responseTimeMinutes": 35.82
+          }
+        },
+        {
+          "time": 120,
+          "eventType": "INCIDENT_UNSERVED",
+          "data": {
+            "incidentId": "INC-SIM-42-0016",
+            "reason": "Simulation timeline ended before hospital admission could be completed"
+          }
+        },
+        {
+          "time": 120,
+          "eventType": "INCIDENT_UNSERVED",
+          "data": {
+            "incidentId": "INC-SIM-42-0017",
+            "reason": "Simulation timeline ended before hospital admission could be completed"
+          }
+        },
+        {
+          "time": 120,
+          "eventType": "INCIDENT_UNSERVED",
+          "data": {
+            "incidentId": "INC-SIM-42-0018",
+            "reason": "Simulation timeline ended before hospital admission could be completed"
+          }
+        },
+        {
+          "time": 120,
+          "eventType": "INCIDENT_UNSERVED",
+          "data": {
+            "incidentId": "INC-SIM-42-0019",
+            "reason": "Simulation timeline ended before hospital admission could be completed"
+          }
+        },
+        {
+          "time": 120,
+          "eventType": "INCIDENT_UNSERVED",
+          "data": {
+            "incidentId": "INC-SIM-42-0020",
+            "reason": "Simulation timeline ended before hospital admission could be completed"
+          }
+        }
+      ]
+    }
+  }
+}

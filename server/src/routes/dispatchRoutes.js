@@ -7,6 +7,8 @@ import {
   getDispatchById,
   updateDispatchStatus,
   assignDispatch,
+  evaluateAllocation,
+  confirmAllocation,
 } from '../controllers/dispatchController.js';
 
 const router = Router();
@@ -22,8 +24,20 @@ router.route('/')
     createDispatch
   );
 
+router.route('/evaluate-allocation')
+  .post(
+    authorize('admin', 'dispatcher', 'medical_staff'),
+    evaluateAllocation
+  );
+
 router.route('/:id')
   .get(getDispatchById);
+
+router.route('/:id/confirm-allocation')
+  .post(
+    authorize('admin', 'dispatcher'),
+    confirmAllocation
+  );
 
 router.route('/:id/status')
   .patch(

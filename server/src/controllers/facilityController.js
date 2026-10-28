@@ -1,6 +1,7 @@
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import { sendSuccess } from '../utils/apiResponse.js';
 import * as facilityService from '../services/facilityService.js';
+import { emitFacilityCapacityUpdate } from '../services/realtime/socketManager.js';
 
 export const createFacility = asyncHandler(async (req, res) => {
   const facility = await facilityService.createFacility(req.body);
@@ -19,6 +20,13 @@ export const getFacilityById = asyncHandler(async (req, res) => {
 
 export const updateFacility = asyncHandler(async (req, res) => {
   const facility = await facilityService.updateFacility(req.params.id, req.body);
+  if (req.body.emergencyCapacity || facility.emergencyCapacity) {
+    emitFacilityCapacityUpdate({
+      facilityId: facility._id,
+      facilityName: facility.name,
+      emergencyCapacity: facility.emergencyCapacity,
+    });
+  }
   return sendSuccess(res, facility, 'Facility updated successfully', 200);
 });
 

@@ -153,6 +153,14 @@ class ApiService {
     return this.patch(`/api/dispatches/${id}/assign`, { driverId, facilityId });
   }
 
+  evaluateAllocation(payload) {
+    return this.post('/api/dispatches/evaluate-allocation', payload);
+  }
+
+  confirmAllocation(id, payload) {
+    return this.post(`/api/dispatches/${id}/confirm-allocation`, payload);
+  }
+
   // --- FACILITIES ---
   getFacilities(params = {}) {
     const query = new URLSearchParams();
@@ -265,6 +273,40 @@ class ApiService {
 
   recommendFacility(payload) {
     return this.post('/api/ai/recommend-facility', payload);
+  }
+
+  // --- DETERMINISTIC GRAPH ROUTING ENGINE ---
+  planRoute(payload) {
+    return this.post('/api/routes/plan', payload);
+  }
+
+  // --- REPRODUCIBLE SIMULATION & BENCHMARKING SUITE ---
+  getSimulationScenarios() {
+    return this.get('/api/simulation/scenarios');
+  }
+
+  getLatestBenchmark() {
+    return this.get('/api/simulation/latest');
+  }
+
+  getBenchmarkHistory() {
+    return this.get('/api/simulation/history');
+  }
+
+  runSimulationBenchmark(payload) {
+    return this.post('/api/simulation/benchmark', payload);
+  }
+
+  getBenchmarkFileUrl(filename) {
+    return `${this.baseUrl}/api/simulation/export/${encodeURIComponent(filename)}`;
+  }
+
+  getRoadNetworkGraph() {
+    return this.get('/api/routes/network-graph');
+  }
+
+  updateRoadCondition(payload) {
+    return this.post('/api/routes/network-condition', payload);
   }
 }
 
