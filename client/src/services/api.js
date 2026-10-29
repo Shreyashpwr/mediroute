@@ -280,6 +280,10 @@ class ApiService {
     return this.post('/api/routes/plan', payload);
   }
 
+  compareRoutes(payload) {
+    return this.post('/api/routes/plan', { ...payload, compare: true });
+  }
+
   // --- REPRODUCIBLE SIMULATION & BENCHMARKING SUITE ---
   getSimulationScenarios() {
     return this.get('/api/simulation/scenarios');

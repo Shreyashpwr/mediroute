@@ -35,7 +35,8 @@ export const getRouteById = async (id) => {
  */
 export const planDeterministicRoute = async (params) => {
   const result = calculateDeterministicRoute(params);
-  if (!result.success && !result.isGraphRouted && result.source !== 'standard_route_fallback') {
+  const isCompare = Boolean(params?.compare || params?.algorithm === 'compare');
+  if (!result.success && !result.isGraphRouted && result.source !== 'standard_route_fallback' && !isCompare) {
     throw new AppError(result.failureReason || 'Routing plan could not be computed', 400);
   }
   return result;

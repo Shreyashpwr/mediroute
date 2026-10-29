@@ -20,77 +20,124 @@ export const findShortestPathAStar = (
   destinationNodeId,
   options = {}
 ) => {
+  const startTime = performance.now();
   const costMetric = options.costMetric || 'time';
   const startId = String(startNodeId);
   const destId = String(destinationNodeId);
   const maxSpeed = options.maxNetworkSpeedKmH || DEFAULT_MAX_NETWORK_SPEED_KMH;
+  const algorithm = options.algorithm || 'a_star';
+
+  const getComputationTimeMs = () => {
+    const elapsed = performance.now() - startTime;
+    return Number(Math.max(0.001, elapsed).toFixed(3));
+  };
 
   // Validation: Graph existence
   if (!graph || typeof graph.hasNode !== 'function') {
+    const failureReason = 'Invalid road graph instance provided';
     return {
       success: false,
-      algorithm: 'a_star',
+      algorithm,
       costMetric,
+      routeNodeIds: [],
+      orderedEdgeIds: [],
+      coordinates: [],
+      totalDistanceKm: 0,
+      estimatedTravelTimeMinutes: 0,
+      nodesExplored: 0,
+      computationTimeMs: getComputationTimeMs(),
+      routeCost: Infinity,
+      failureReason,
+      error: failureReason,
+      // Backwards-compatibility aliases:
       nodeSequence: [],
       edgeSequence: [],
-      totalDistanceKm: 0,
-      estimatedDurationMinutes: 0,
+      waypoints: [],
       totalCost: Infinity,
       expandedNodeCount: 0,
+      estimatedDurationMinutes: 0,
       isValidRoute: false,
-      failureReason: 'Invalid road graph instance provided',
     };
   }
 
   // Validation: Start & destination presence
   if (!graph.hasNode(startId)) {
+    const failureReason = `Origin node "${startId}" does not exist in graph`;
     return {
       success: false,
-      algorithm: 'a_star',
+      algorithm,
       costMetric,
+      routeNodeIds: [],
+      orderedEdgeIds: [],
+      coordinates: [],
+      totalDistanceKm: 0,
+      estimatedTravelTimeMinutes: 0,
+      nodesExplored: 0,
+      computationTimeMs: getComputationTimeMs(),
+      routeCost: Infinity,
+      failureReason,
+      error: failureReason,
       nodeSequence: [],
       edgeSequence: [],
-      totalDistanceKm: 0,
-      estimatedDurationMinutes: 0,
+      waypoints: [],
       totalCost: Infinity,
       expandedNodeCount: 0,
+      estimatedDurationMinutes: 0,
       isValidRoute: false,
-      failureReason: `Origin node "${startId}" does not exist in graph`,
     };
   }
 
   if (!graph.hasNode(destId)) {
+    const failureReason = `Destination node "${destId}" does not exist in graph`;
     return {
       success: false,
-      algorithm: 'a_star',
+      algorithm,
       costMetric,
+      routeNodeIds: [],
+      orderedEdgeIds: [],
+      coordinates: [],
+      totalDistanceKm: 0,
+      estimatedTravelTimeMinutes: 0,
+      nodesExplored: 0,
+      computationTimeMs: getComputationTimeMs(),
+      routeCost: Infinity,
+      failureReason,
+      error: failureReason,
       nodeSequence: [],
       edgeSequence: [],
-      totalDistanceKm: 0,
-      estimatedDurationMinutes: 0,
+      waypoints: [],
       totalCost: Infinity,
       expandedNodeCount: 0,
+      estimatedDurationMinutes: 0,
       isValidRoute: false,
-      failureReason: `Destination node "${destId}" does not exist in graph`,
     };
   }
 
   // Edge case: Start equals Destination
   if (startId === destId) {
     const startNode = graph.getNode(startId);
+    const coords = startNode.coordinates ? [{ latitude: startNode.coordinates.latitude, longitude: startNode.coordinates.longitude }] : [];
     return {
       success: true,
-      algorithm: 'a_star',
+      algorithm,
       costMetric,
+      routeNodeIds: [startId],
+      orderedEdgeIds: [],
+      coordinates: coords,
+      totalDistanceKm: 0,
+      estimatedTravelTimeMinutes: 0,
+      nodesExplored: 1,
+      computationTimeMs: getComputationTimeMs(),
+      routeCost: 0,
+      failureReason: null,
+      error: null,
       nodeSequence: [startNode],
       edgeSequence: [],
-      totalDistanceKm: 0,
-      estimatedDurationMinutes: 0,
+      waypoints: coords,
       totalCost: 0,
       expandedNodeCount: 1,
+      estimatedDurationMinutes: 0,
       isValidRoute: true,
-      failureReason: null,
-      waypoints: startNode.coordinates ? [{ ...startNode.coordinates }] : [],
     };
   }
 
@@ -108,7 +155,7 @@ export const findShortestPathAStar = (
   fScore.set(startId, initialH);
   pq.push(startId, initialH);
 
-  let expandedNodeCount = 0;
+  let nodesExplored = 0;
   let destinationFound = false;
 
   while (!pq.isEmpty()) {
@@ -116,7 +163,7 @@ export const findShortestPathAStar = (
 
     if (closedSet.has(currentId)) continue;
     closedSet.add(currentId);
-    expandedNodeCount++;
+    nodesExplored++;
 
     // Target reached - with an admissible, consistent heuristic,
     // this path is mathematically guaranteed to be optimal.
@@ -154,18 +201,28 @@ export const findShortestPathAStar = (
   }
 
   if (!destinationFound) {
+    const failureReason = `Destination "${destId}" is unreachable from origin "${startId}" (disconnected network or closed roads)`;
     return {
       success: false,
-      algorithm: 'a_star',
+      algorithm,
       costMetric,
+      routeNodeIds: [],
+      orderedEdgeIds: [],
+      coordinates: [],
+      totalDistanceKm: 0,
+      estimatedTravelTimeMinutes: 0,
+      nodesExplored,
+      computationTimeMs: getComputationTimeMs(),
+      routeCost: Infinity,
+      failureReason,
+      error: failureReason,
       nodeSequence: [],
       edgeSequence: [],
-      totalDistanceKm: 0,
-      estimatedDurationMinutes: 0,
+      waypoints: [],
       totalCost: Infinity,
-      expandedNodeCount,
+      expandedNodeCount: nodesExplored,
+      estimatedDurationMinutes: 0,
       isValidRoute: false,
-      failureReason: `Destination "${destId}" is unreachable from origin "${startId}" (disconnected network or closed roads)`,
     };
   }
 
@@ -184,30 +241,45 @@ export const findShortestPathAStar = (
   nodeSequence.unshift(graph.getNode(startId));
 
   let totalDistanceKm = 0;
-  let estimatedDurationMinutes = 0;
+  let estimatedTravelTimeMinutes = 0;
 
   for (const edge of edgeSequence) {
     totalDistanceKm += edge.distanceKm;
-    estimatedDurationMinutes += edge.travelTimeMinutes;
+    estimatedTravelTimeMinutes += edge.travelTimeMinutes;
   }
 
-  const waypoints = nodeSequence
+  const coordinates = nodeSequence
     .filter((n) => n.coordinates)
-    .map((n) => ({ ...n.coordinates }));
+    .map((n) => ({ latitude: n.coordinates.latitude, longitude: n.coordinates.longitude }));
+
+  const routeNodeIds = nodeSequence.map((n) => n.id);
+  const orderedEdgeIds = edgeSequence.map((e) => e.id);
+  const finalCost = Number(gScore.get(destId).toFixed(3));
+  const finalDistance = Number(totalDistanceKm.toFixed(3));
+  const finalDuration = Number(estimatedTravelTimeMinutes.toFixed(2));
 
   return {
     success: true,
-    algorithm: 'a_star',
+    algorithm,
     costMetric,
+    routeNodeIds,
+    orderedEdgeIds,
+    coordinates,
+    totalDistanceKm: finalDistance,
+    estimatedTravelTimeMinutes: finalDuration,
+    nodesExplored,
+    computationTimeMs: getComputationTimeMs(),
+    routeCost: finalCost,
+    failureReason: null,
+    error: null,
+    // Backwards-compatibility aliases:
     nodeSequence,
     edgeSequence,
-    totalDistanceKm: Number(totalDistanceKm.toFixed(3)),
-    estimatedDurationMinutes: Number(estimatedDurationMinutes.toFixed(2)),
-    totalCost: Number(gScore.get(destId).toFixed(3)),
-    expandedNodeCount,
+    waypoints: coordinates,
+    totalCost: finalCost,
+    expandedNodeCount: nodesExplored,
+    estimatedDurationMinutes: finalDuration,
     isValidRoute: true,
-    failureReason: null,
-    waypoints,
   };
 };
 

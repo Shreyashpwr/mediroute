@@ -92,6 +92,91 @@ const createIncidentIcon = (incident) => {
   });
 };
 
+// --- ROUTE COMPARISON UTILITIES & METRIC FORMATTERS ---
+
+// Normalizes coordinate representations to Leaflet [lat, lng] array
+const toLatLngArray = (coords) => {
+  if (!Array.isArray(coords)) return [];
+  return coords
+    .map((c) => {
+      if (!c) return null;
+      if (Array.isArray(c) && c.length >= 2) {
+        return [Number(c[0]), Number(c[1])];
+      }
+      const lat = Number(c.latitude ?? c.lat);
+      const lng = Number(c.longitude ?? c.lng ?? c.lon);
+      if (isNaN(lat) || isNaN(lng)) return null;
+      return [lat, lng];
+    })
+    .filter(Boolean);
+};
+
+// Computes a slight perpendicular offset in lat/lng space for overlapping display
+const offsetCoordinates = (coords, offsetMeters = 10) => {
+  if (!coords || coords.length < 2) return coords || [];
+  const latScale = 1 / 111111;
+  const avgLat = coords.reduce((sum, c) => sum + c[0], 0) / coords.length;
+  const lngScale = 1 / (111111 * Math.cos((avgLat * Math.PI) / 180));
+
+  return coords.map((pt, i) => {
+    let dx = 0;
+    let dy = 0;
+    if (i < coords.length - 1) {
+      dy += coords[i + 1][0] - pt[0];
+      dx += (coords[i + 1][1] - pt[1]) * Math.cos((avgLat * Math.PI) / 180);
+    }
+    if (i > 0) {
+      dy += pt[0] - coords[i - 1][0];
+      dx += (pt[1] - coords[i - 1][1]) * Math.cos((avgLat * Math.PI) / 180);
+    }
+    const len = Math.sqrt(dx * dx + dy * dy);
+    if (len === 0) return [pt[0], pt[1]];
+    // Perpendicular normal: (-dy, dx)
+    const normY = -dx / len;
+    const normX = dy / len;
+    return [
+      Number((pt[0] + normY * offsetMeters * latScale).toFixed(6)),
+      Number((pt[1] + normX * offsetMeters * lngScale).toFixed(6)),
+    ];
+  });
+};
+
+const areCoordinatesEqual = (c1, c2) => {
+  if (!Array.isArray(c1) || !Array.isArray(c2)) return false;
+  if (c1.length !== c2.length) return false;
+  return c1.every((pt, i) => Math.abs(pt[0] - c2[i][0]) < 1e-5 && Math.abs(pt[1] - c2[i][1]) < 1e-5);
+};
+
+const formatComputationTime = (ms) => {
+  if (typeof ms !== 'number' || isNaN(ms)) return 'N/A';
+  if (ms <= 0) return '<1 ms';
+  if (ms < 0.01) return '<0.01 ms';
+  if (ms < 1) return `${ms.toFixed(2)} ms (<1 ms)`;
+  return `${ms.toFixed(2)} ms`;
+};
+
+const formatDistance = (km) => {
+  if (typeof km !== 'number' || isNaN(km)) return 'N/A';
+  return `${km.toFixed(2)} km`;
+};
+
+const formatDuration = (mins) => {
+  if (typeof mins !== 'number' || isNaN(mins)) return 'N/A';
+  return `${mins.toFixed(2)} min`;
+};
+
+const formatNodes = (nodes) => {
+  if (typeof nodes !== 'number' || isNaN(nodes)) return 'N/A';
+  return `${nodes} ${nodes === 1 ? 'node' : 'nodes'}`;
+};
+
+const CORRIDOR_PRESETS = [
+  { label: 'Shivajinagar → Kothrud (6.2 km)', origin: '18.5314, 73.8478', dest: '18.5074, 73.8087' },
+  { label: 'Hinjawadi → Shivajinagar (16.3 km)', origin: '18.5913, 73.7380', dest: '18.5314, 73.8478' },
+  { label: 'Baner → Sahyadri (8.4 km)', origin: '18.5590, 73.7925', dest: '18.5158, 73.8402' },
+  { label: 'Swargate → Pimpri (18.1 km)', origin: '18.5018, 73.8567', dest: '18.6298, 73.7997' },
+];
+
 export const OperationalMap = ({
   height = '560px',
   onSelectIncident,
@@ -101,7 +186,7 @@ export const OperationalMap = ({
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersLayerRef = useRef(null);
-  const routeLayersRef = useRef([]);
+  const comparisonLayerGroupRef = useRef(null);
   const tileLayerRef = useRef(null);
 
   const [mapData, setMapData] = useState(null);
@@ -177,6 +262,8 @@ export const OperationalMap = ({
 
     const markersLayer = L.layerGroup().addTo(map);
     markersLayerRef.current = markersLayer;
+    const comparisonLayer = L.layerGroup().addTo(map);
+    comparisonLayerGroupRef.current = comparisonLayer;
     mapInstanceRef.current = map;
 
     const triggerInvalidate = () => {
@@ -211,6 +298,11 @@ export const OperationalMap = ({
       clearTimeout(timer3);
       window.removeEventListener('resize', handleWindowResize);
       if (resizeObserver) resizeObserver.disconnect();
+      if (comparisonLayerGroupRef.current) {
+        comparisonLayerGroupRef.current.clearLayers();
+        comparisonLayerGroupRef.current.remove();
+        comparisonLayerGroupRef.current = null;
+      }
       map.remove();
       mapInstanceRef.current = null;
     };
@@ -388,14 +480,17 @@ export const OperationalMap = ({
     // 9. Simulated Road Network Alerts
     const unsubRoadClosed = socketService.subscribe(REALTIME_EVENTS.NETWORK_ROAD_CLOSED, (payload) => {
       addRealtimeNotice(`🚧 Road Closure Alert: ${payload.roadName || payload.edgeId} is closed`);
+      setComparisonResults((prev) => (prev ? { ...prev, isStale: true } : null));
     });
 
     const unsubRoadReopened = socketService.subscribe(REALTIME_EVENTS.NETWORK_ROAD_REOPENED, (payload) => {
       addRealtimeNotice(`🟢 Road Reopened: ${payload.roadName || payload.edgeId} open`);
+      setComparisonResults((prev) => (prev ? { ...prev, isStale: true } : null));
     });
 
     const unsubCongestion = socketService.subscribe(REALTIME_EVENTS.NETWORK_CONGESTION, (payload) => {
       addRealtimeNotice(`⚠️ Congestion: ${payload.roadName || payload.edgeId} congestion x${payload.congestionMultiplier}`);
+      setComparisonResults((prev) => (prev ? { ...prev, isStale: true } : null));
     });
 
     return () => {
@@ -634,72 +729,87 @@ export const OperationalMap = ({
     setComparisonError(null);
 
     // Clear previous comparison polylines
-    if (mapInstanceRef.current && routeLayersRef.current) {
-      routeLayersRef.current.forEach((layer) => mapInstanceRef.current.removeLayer(layer));
-      routeLayersRef.current = [];
+    if (comparisonLayerGroupRef.current) {
+      comparisonLayerGroupRef.current.clearLayers();
     }
 
     try {
       const originParts = selectedOrigin.split(',').map((s) => Number(s.trim()));
       const destParts = selectedDestination.split(',').map((s) => Number(s.trim()));
 
+      if (originParts.length < 2 || isNaN(originParts[0]) || isNaN(originParts[1])) {
+        throw new Error('Origin coordinates must be in "latitude, longitude" format (e.g. 18.5314, 73.8478)');
+      }
+      if (destParts.length < 2 || isNaN(destParts[0]) || isNaN(destParts[1])) {
+        throw new Error('Destination coordinates must be in "latitude, longitude" format (e.g. 18.5074, 73.8087)');
+      }
+
       const origin = { latitude: originParts[0], longitude: originParts[1] };
       const destination = { latitude: destParts[0], longitude: destParts[1] };
 
-      // Request A* route
-      const t0A = performance.now();
-      const resA = await api.planRoute({ origin, destination, algorithm: 'a_star' });
-      const t1A = performance.now();
-      const clientDurationA = Math.round((t1A - t0A) * 100) / 100;
+      // Request unified comparison running on identical graph snapshot
+      const t0 = performance.now();
+      const res = await api.planRoute({ origin, destination, compare: true });
+      const clientDuration = Math.round((performance.now() - t0) * 100) / 100;
 
-      // Request Dijkstra route
-      const t0D = performance.now();
-      const resD = await api.planRoute({ origin, destination, algorithm: 'dijkstra' });
-      const t1D = performance.now();
-      const clientDurationD = Math.round((t1D - t0D) * 100) / 100;
-
-      const aStarData = resA?.data || resA;
-      const dijkstraData = resD?.data || resD;
+      const resData = res?.data || res;
+      const comparison = resData?.comparison || {};
+      const aStarData = comparison?.aStar || resData;
+      const dijkstraData = comparison?.dijkstra || resData;
+      const pathsAreIdentical = Boolean(comparison?.pathsAreIdentical);
 
       setComparisonResults({
         aStar: {
           ...aStarData,
-          clientMeasuredMs: clientDurationA,
+          clientMeasuredMs: clientDuration,
         },
         dijkstra: {
           ...dijkstraData,
-          clientMeasuredMs: clientDurationD,
+          clientMeasuredMs: clientDuration,
         },
+        pathsAreIdentical,
+        isStale: false,
       });
 
       // Render polylines on Leaflet map
-      if (mapInstanceRef.current) {
+      if (mapInstanceRef.current && comparisonLayerGroupRef.current) {
+        comparisonLayerGroupRef.current.clearLayers();
         const bounds = L.latLngBounds();
 
+        const dijkstraRawCoords = toLatLngArray(dijkstraData?.coordinates || dijkstraData?.waypoints);
+        const aStarCoords = toLatLngArray(aStarData?.coordinates || aStarData?.waypoints);
+
+        const areIdentical = pathsAreIdentical || areCoordinatesEqual(aStarCoords, dijkstraRawCoords);
+
         // Dijkstra Polyline (amber dashed)
-        if (dijkstraData?.waypoints && dijkstraData.waypoints.length > 1) {
-          const dijkstraCoords = dijkstraData.waypoints.map((w) => [w.latitude, w.longitude]);
-          const dijkstraLine = L.polyline(dijkstraCoords, {
+        if (dijkstraData?.success && dijkstraRawCoords.length > 1) {
+          // If paths overlap, apply visual offset so both lines remain clearly visible
+          const dijkstraDisplayCoords = areIdentical
+            ? offsetCoordinates(dijkstraRawCoords, 10)
+            : dijkstraRawCoords;
+
+          const dijkstraLine = L.polyline(dijkstraDisplayCoords, {
             color: '#f59e0b',
             weight: 5,
-            opacity: 0.85,
-            dashArray: '6, 8',
-          }).addTo(mapInstanceRef.current);
-          dijkstraLine.bindTooltip('Dijkstra Baseline Route (Uniform Cost)', { sticky: true });
-          routeLayersRef.current.push(dijkstraLine);
-          dijkstraCoords.forEach((pt) => bounds.extend(pt));
+            opacity: 0.9,
+            dashArray: '8, 8',
+          }).addTo(comparisonLayerGroupRef.current);
+
+          const tooltipText = areIdentical
+            ? 'Dijkstra Baseline Route (Uniform Cost) [Visual Offset Applied]'
+            : 'Dijkstra Baseline Route (Uniform Cost)';
+          dijkstraLine.bindTooltip(tooltipText, { sticky: true });
+          dijkstraDisplayCoords.forEach((pt) => bounds.extend(pt));
         }
 
         // A* Polyline (cyan solid)
-        if (aStarData?.waypoints && aStarData.waypoints.length > 1) {
-          const aStarCoords = aStarData.waypoints.map((w) => [w.latitude, w.longitude]);
+        if (aStarData?.success && aStarCoords.length > 1) {
           const aStarLine = L.polyline(aStarCoords, {
             color: '#00e5ff',
             weight: 4,
             opacity: 0.95,
-          }).addTo(mapInstanceRef.current);
+          }).addTo(comparisonLayerGroupRef.current);
           aStarLine.bindTooltip('A* Guided Heuristic Route (Optimal)', { sticky: true });
-          routeLayersRef.current.push(aStarLine);
           aStarCoords.forEach((pt) => bounds.extend(pt));
         }
 
@@ -715,11 +825,11 @@ export const OperationalMap = ({
   };
 
   const clearRouteComparison = () => {
-    if (mapInstanceRef.current && routeLayersRef.current) {
-      routeLayersRef.current.forEach((layer) => mapInstanceRef.current.removeLayer(layer));
-      routeLayersRef.current = [];
+    if (comparisonLayerGroupRef.current) {
+      comparisonLayerGroupRef.current.clearLayers();
     }
     setComparisonResults(null);
+    setComparisonError(null);
     setShowRouteComparison(false);
   };
 
@@ -812,14 +922,18 @@ export const OperationalMap = ({
             type="button"
             className={`map-tool-btn ${showRouteComparison ? 'active-pulse' : ''}`}
             onClick={() => {
-              setShowRouteComparison(!showRouteComparison);
-              if (!selectedOrigin && mapData?.ambulances?.[0]?.coordinates) {
-                const amb = mapData.ambulances[0].coordinates;
-                setSelectedOrigin(`${amb.latitude}, ${amb.longitude}`);
-              }
-              if (!selectedDestination && mapData?.facilities?.[0]?.coordinates) {
-                const fac = mapData.facilities[0].coordinates;
-                setSelectedDestination(`${fac.latitude}, ${fac.longitude}`);
+              const nextShow = !showRouteComparison;
+              setShowRouteComparison(nextShow);
+              if (nextShow && (!selectedOrigin || !selectedDestination)) {
+                if (mapData?.ambulances?.[0]?.coordinates && mapData?.facilities?.[0]?.coordinates) {
+                  const amb = mapData.ambulances[0].coordinates;
+                  const fac = mapData.facilities[0].coordinates;
+                  setSelectedOrigin(`${amb.latitude}, ${amb.longitude}`);
+                  setSelectedDestination(`${fac.latitude}, ${fac.longitude}`);
+                } else {
+                  setSelectedOrigin('18.5314, 73.8478');
+                  setSelectedDestination('18.5074, 73.8087');
+                }
               }
             }}
             title="Open side-by-side A* vs Dijkstra routing comparison"
@@ -886,6 +1000,34 @@ export const OperationalMap = ({
             </div>
           </div>
 
+          {/* Quick Preset Corridors */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
+            <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600 }}>Quick Test Corridors:</span>
+            {CORRIDOR_PRESETS.map((preset) => (
+              <button
+                key={preset.label}
+                type="button"
+                onClick={() => {
+                  setSelectedOrigin(preset.origin);
+                  setSelectedDestination(preset.dest);
+                  setComparisonResults((prev) => (prev ? { ...prev, isStale: true } : null));
+                  setComparisonError(null);
+                }}
+                style={{
+                  background: '#1e293b',
+                  color: '#93c5fd',
+                  border: '1px solid #334155',
+                  padding: '3px 8px',
+                  borderRadius: '4px',
+                  fontSize: '11px',
+                  cursor: 'pointer',
+                }}
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '10px', alignItems: 'flex-end', marginBottom: '14px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '12px', color: '#94a3b8', marginBottom: '4px' }}>
@@ -894,8 +1036,11 @@ export const OperationalMap = ({
               <input
                 type="text"
                 value={selectedOrigin}
-                onChange={(e) => setSelectedOrigin(e.target.value)}
-                placeholder="e.g. 18.5204, 73.8567"
+                onChange={(e) => {
+                  setSelectedOrigin(e.target.value);
+                  setComparisonResults((prev) => (prev ? { ...prev, isStale: true } : null));
+                }}
+                placeholder="e.g. 18.5314, 73.8478"
                 style={{ width: '100%', padding: '6px 10px', background: '#0f172a', border: '1px solid #334155', borderRadius: '4px', color: '#fff', fontSize: '13px' }}
               />
             </div>
@@ -906,8 +1051,11 @@ export const OperationalMap = ({
               <input
                 type="text"
                 value={selectedDestination}
-                onChange={(e) => setSelectedDestination(e.target.value)}
-                placeholder="e.g. 18.5314, 73.8446"
+                onChange={(e) => {
+                  setSelectedDestination(e.target.value);
+                  setComparisonResults((prev) => (prev ? { ...prev, isStale: true } : null));
+                }}
+                placeholder="e.g. 18.5074, 73.8087"
                 style={{ width: '100%', padding: '6px 10px', background: '#0f172a', border: '1px solid #334155', borderRadius: '4px', color: '#fff', fontSize: '13px' }}
               />
             </div>
@@ -930,64 +1078,120 @@ export const OperationalMap = ({
           )}
 
           {comparisonResults && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              {/* A* Panel */}
-              <div style={{ background: '#0f172a', border: '1px solid #0284c7', borderRadius: '6px', padding: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1e293b', paddingBottom: '8px', marginBottom: '8px' }}>
-                  <span style={{ color: '#38bdf8', fontWeight: 700, fontSize: '14px' }}>A* Search (Guided Heuristic)</span>
-                  <span style={{ background: '#0369a1', color: '#fff', fontSize: '11px', padding: '2px 6px', borderRadius: '4px' }}>OPTIMAL</span>
+            <div>
+              {comparisonResults.isStale && (
+                <div style={{ background: '#451a03', border: '1px solid #b45309', padding: '6px 12px', borderRadius: '4px', color: '#fde68a', fontSize: '12px', marginBottom: '10px' }}>
+                  ⚠️ Graph conditions or input coordinates have changed since calculation. Click <strong>Compare Algorithms</strong> to refresh metrics.
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '13px' }}>
-                  <div>
-                    <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px' }}>Server Calc Time</span>
-                    <strong style={{ color: '#38bdf8' }}>{comparisonResults.aStar.computationTimeMs ?? 0} ms</strong>
+              )}
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                {/* A* Panel */}
+                <div style={{ background: '#0f172a', border: '1px solid #0284c7', borderRadius: '6px', padding: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1e293b', paddingBottom: '8px', marginBottom: '8px' }}>
+                    <span style={{ color: '#38bdf8', fontWeight: 700, fontSize: '14px' }}>
+                      A* Search (Guided Heuristic)
+                    </span>
+                    <span style={{ background: comparisonResults.aStar.success ? '#0369a1' : '#7f1d1d', color: '#fff', fontSize: '11px', padding: '2px 6px', borderRadius: '4px' }}>
+                      {comparisonResults.aStar.success ? 'OPTIMAL' : 'FAILED'}
+                    </span>
                   </div>
-                  <div>
-                    <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px' }}>Total Distance</span>
-                    <strong>{comparisonResults.aStar.distanceKm} km</strong>
-                  </div>
-                  <div>
-                    <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px' }}>Est. Travel Time</span>
-                    <strong style={{ color: '#10b981' }}>{comparisonResults.aStar.estimatedDurationMinutes} min</strong>
-                  </div>
-                  <div>
-                    <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px' }}>Nodes Explored</span>
-                    <strong style={{ color: '#a855f7' }}>{comparisonResults.aStar.nodesExplored ?? 0} nodes</strong>
-                  </div>
+
+                  {!comparisonResults.aStar.success ? (
+                    <div style={{ color: '#f87171', background: '#450a0a', padding: '8px 10px', borderRadius: '4px', fontSize: '12px' }}>
+                      ⚠️ Route Unreachable: {comparisonResults.aStar.failureReason || comparisonResults.aStar.error || 'No connected path could be found.'}
+                    </div>
+                  ) : (
+                    <>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '13px' }}>
+                        <div>
+                          <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px' }}>Server Calc Time</span>
+                          <strong style={{ color: '#38bdf8' }}>
+                            {formatComputationTime(comparisonResults.aStar.computationTimeMs)}
+                          </strong>
+                        </div>
+                        <div>
+                          <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px' }}>Total Distance</span>
+                          <strong>
+                            {formatDistance(comparisonResults.aStar.totalDistanceKm ?? comparisonResults.aStar.distanceKm)}
+                          </strong>
+                        </div>
+                        <div>
+                          <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px' }}>Est. Travel Time</span>
+                          <strong style={{ color: '#10b981' }}>
+                            {formatDuration(comparisonResults.aStar.estimatedTravelTimeMinutes ?? comparisonResults.aStar.estimatedDurationMinutes)}
+                          </strong>
+                        </div>
+                        <div>
+                          <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px' }}>Nodes Explored</span>
+                          <strong style={{ color: '#a855f7' }}>
+                            {formatNodes(comparisonResults.aStar.nodesExplored ?? comparisonResults.aStar.expandedNodeCount)}
+                          </strong>
+                        </div>
+                      </div>
+                      <div style={{ marginTop: '8px', fontSize: '11px', color: '#64748b' }}>
+                        Map Visual: Solid Cyan Line (#00e5ff) {comparisonResults.aStar.isGraphRouted ? '• Pune Regional Graph' : '• Standard Corridor Fallback'}
+                      </div>
+                    </>
+                  )}
                 </div>
-                <div style={{ marginTop: '8px', fontSize: '11px', color: '#64748b' }}>
-                  Map Visual: Solid Cyan Line (#00e5ff)
+
+                {/* Dijkstra Panel */}
+                <div style={{ background: '#0f172a', border: '1px solid #b45309', borderRadius: '6px', padding: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1e293b', paddingBottom: '8px', marginBottom: '8px' }}>
+                    <span style={{ color: '#fbbf24', fontWeight: 700, fontSize: '14px' }}>
+                      Dijkstra's Algorithm (Uniform Cost)
+                    </span>
+                    <span style={{ background: comparisonResults.dijkstra.success ? '#78350f' : '#7f1d1d', color: '#fef3c7', fontSize: '11px', padding: '2px 6px', borderRadius: '4px' }}>
+                      {comparisonResults.dijkstra.success ? 'BASELINE' : 'FAILED'}
+                    </span>
+                  </div>
+
+                  {!comparisonResults.dijkstra.success ? (
+                    <div style={{ color: '#f87171', background: '#450a0a', padding: '8px 10px', borderRadius: '4px', fontSize: '12px' }}>
+                      ⚠️ Route Unreachable: {comparisonResults.dijkstra.failureReason || comparisonResults.dijkstra.error || 'No connected path could be found.'}
+                    </div>
+                  ) : (
+                    <>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '13px' }}>
+                        <div>
+                          <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px' }}>Server Calc Time</span>
+                          <strong style={{ color: '#fbbf24' }}>
+                            {formatComputationTime(comparisonResults.dijkstra.computationTimeMs)}
+                          </strong>
+                        </div>
+                        <div>
+                          <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px' }}>Total Distance</span>
+                          <strong>
+                            {formatDistance(comparisonResults.dijkstra.totalDistanceKm ?? comparisonResults.dijkstra.distanceKm)}
+                          </strong>
+                        </div>
+                        <div>
+                          <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px' }}>Est. Travel Time</span>
+                          <strong style={{ color: '#10b981' }}>
+                            {formatDuration(comparisonResults.dijkstra.estimatedTravelTimeMinutes ?? comparisonResults.dijkstra.estimatedDurationMinutes)}
+                          </strong>
+                        </div>
+                        <div>
+                          <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px' }}>Nodes Explored</span>
+                          <strong style={{ color: '#a855f7' }}>
+                            {formatNodes(comparisonResults.dijkstra.nodesExplored ?? comparisonResults.dijkstra.expandedNodeCount)}
+                          </strong>
+                        </div>
+                      </div>
+                      <div style={{ marginTop: '8px', fontSize: '11px', color: '#64748b' }}>
+                        Map Visual: Dashed Amber Line (#f59e0b) {comparisonResults.dijkstra.isGraphRouted ? '• Pune Regional Graph' : '• Standard Corridor Fallback'}
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
-              {/* Dijkstra Panel */}
-              <div style={{ background: '#0f172a', border: '1px solid #b45309', borderRadius: '6px', padding: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1e293b', paddingBottom: '8px', marginBottom: '8px' }}>
-                  <span style={{ color: '#fbbf24', fontWeight: 700, fontSize: '14px' }}>Dijkstra's Algorithm (Uniform Cost)</span>
-                  <span style={{ background: '#78350f', color: '#fef3c7', fontSize: '11px', padding: '2px 6px', borderRadius: '4px' }}>BASELINE</span>
+              {comparisonResults.pathsAreIdentical && comparisonResults.aStar.success && comparisonResults.dijkstra.success && (
+                <div style={{ marginTop: '12px', padding: '8px 12px', background: '#172554', border: '1px solid #1d4ed8', borderRadius: '4px', fontSize: '12px', color: '#bfdbfe' }}>
+                  ℹ️ <strong>Identical Path:</strong> Both algorithms converged on the identical optimal road corridor. The dashed amber Dijkstra route is drawn with a subtle parallel offset (~10m) so both lines remain clearly visible simultaneously.
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '13px' }}>
-                  <div>
-                    <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px' }}>Server Calc Time</span>
-                    <strong style={{ color: '#fbbf24' }}>{comparisonResults.dijkstra.computationTimeMs ?? 0} ms</strong>
-                  </div>
-                  <div>
-                    <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px' }}>Total Distance</span>
-                    <strong>{comparisonResults.dijkstra.distanceKm} km</strong>
-                  </div>
-                  <div>
-                    <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px' }}>Est. Travel Time</span>
-                    <strong style={{ color: '#10b981' }}>{comparisonResults.dijkstra.estimatedDurationMinutes} min</strong>
-                  </div>
-                  <div>
-                    <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px' }}>Nodes Explored</span>
-                    <strong style={{ color: '#a855f7' }}>{comparisonResults.dijkstra.nodesExplored ?? 0} nodes</strong>
-                  </div>
-                </div>
-                <div style={{ marginTop: '8px', fontSize: '11px', color: '#64748b' }}>
-                  Map Visual: Dashed Amber Line (#f59e0b)
-                </div>
-              </div>
+              )}
             </div>
           )}
         </div>
